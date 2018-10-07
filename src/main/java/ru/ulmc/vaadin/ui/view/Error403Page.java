@@ -7,13 +7,12 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import org.springframework.beans.factory.annotation.Autowired;
 import ru.ulmc.vaadin.service.UserService;
-import ru.ulmc.vaadin.ui.MainView;
+import ru.ulmc.vaadin.ui.MainLayout;
 import ru.ulmc.vaadin.ui.util.PageParams;
-import ru.ulmc.vaadin.ui.util.TopLevelPage;
 
 @SpringComponent
 @UIScope
-@Route(value = "403", layout = MainView.class)
+@Route(value = "403", layout = MainLayout.class)
 public class Error403Page extends CommonPage {
     public static final PageParams PAGE = PageParams.builder().build();
     private final UserService userService;

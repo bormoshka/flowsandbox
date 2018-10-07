@@ -25,11 +25,11 @@ public class AppNavigation extends Div implements RouterLayout {
         topLevelPageInfos = scanForViews();
         topLevelPageInfos.forEach(page -> {
             RouterLink link = new RouterLink(page.getName(), page.getTarget());
+            link.addClassName("main-layout__nav-item");
             link.setHighlightCondition(HighlightConditions.sameLocation());
             add(link);
         });
-
-
+        addClassName("main-layout__nav");
     }
 
     private Collection<TopLevelPageInfo> scanForViews() { // todo: make it static

@@ -7,7 +7,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import org.springframework.beans.factory.annotation.Autowired;
 import ru.ulmc.vaadin.service.UserService;
-import ru.ulmc.vaadin.ui.MainView;
+import ru.ulmc.vaadin.ui.MainLayout;
 import ru.ulmc.vaadin.ui.util.PageParams;
 import ru.ulmc.vaadin.ui.util.TopLevelPage;
 import ru.ulmc.vaadin.ui.view.CommonPage;
@@ -16,7 +16,7 @@ import ru.ulmc.vaadin.user.Permission;
 @SpringComponent
 @UIScope
 @TopLevelPage(menuName = "Справочник", order = 3)
-@Route(value = "info", layout = MainView.class)
+@Route(value = "info", layout = MainLayout.class)
 public class InformationPage extends CommonPage {
     public static final PageParams PAGE = PageParams.from(Permission.INFORMATION_READ).build();
     private final UserService userService;

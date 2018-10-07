@@ -23,10 +23,7 @@ public class MonitoringService {
             event.setName(events[rand.nextInt(events.length)]);
             event.setUser(names[rand.nextInt(names.length)]);
             event.setDescription("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.");
-            event.setTimeAndDate(LocalDateTime.now()
-                    .minusDays(rand.nextInt())
-                    .minusHours(rand.nextInt())
-                    .minusMinutes(rand.nextInt()));
+            event.setTimeAndDate(LocalDateTime.now().minusSeconds(rand.nextInt()));
             return event;
         }).collect(Collectors.toList());
     }
