@@ -1,14 +1,11 @@
 package src.ru.ulmc.investor.ui;
 
 import org.junit.Test;
-import ru.ulmc.investor.data.entity.BasePosition;
-import ru.ulmc.investor.data.entity.Currency;
-import ru.ulmc.investor.data.entity.Portfolio;
+import ru.ulmc.investor.data.entity.*;
 import ru.ulmc.investor.ui.entity.PortfolioViewModel;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -17,7 +14,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 public class PortfolioViewModelTest {
     @Test
     public void test() {
-        PortfolioViewModel pmv = new PortfolioViewModel(getPortfolio());
+        PortfolioViewModel pmv = PortfolioViewModel.of(getPortfolio());
         assertThat(pmv.getPerCurrencyPositionStats().size()).isEqualTo(3);
         PortfolioViewModel.PositionsStat eur = pmv.getPerCurrencyPositionStats().get(Currency.EUR);
         assertThat(eur.getProfit()).isEqualTo(BigDecimal.ZERO);
@@ -27,19 +24,23 @@ public class PortfolioViewModelTest {
         assertThat(eur.getOpenPositionSum()).isEqualTo(BigDecimal.valueOf(300));
     }
 
-    private BasePosition getBasePosition(Portfolio portfolio, Currency currency, boolean isClosed) {
-        return BasePosition.builder()
-                .account("MyAccount")
-                .positionCurrency(currency)
+    private Position getBasePosition(Portfolio portfolio, Currency currency, boolean isClosed) {
+        StockPosition stockPosition = StockPosition.builder()
+                .name("Google " + UUID.randomUUID().toString())
+                .code("GOOG")
+                .stockExchange(StockExchange.NASDAQ)
+                .broker(Broker.builder().name("Sberbank").build())
+                .currency(currency)
                 .closeCurrency(currency)
+                .build();
+        return Position.builder()
+                .stockPosition(stockPosition)
                 .closed(isClosed)
                 .currencyClosePrice(BigDecimal.ONE)
                 .closePrice(BigDecimal.valueOf(3))
-                .size(10)
+                .quantity(10)
                 .openDate(LocalDateTime.now())
                 .openPrice(BigDecimal.valueOf(10))
-                .code("GOOG")
-                .name("Google " + UUID.randomUUID().toString())
                 .currencyOpenPrice(BigDecimal.ONE)
                 .portfolio(portfolio)
                 .build();

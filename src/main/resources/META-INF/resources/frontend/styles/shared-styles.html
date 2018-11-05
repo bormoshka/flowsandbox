@@ -59,7 +59,7 @@
             flex: none;
             align-items: center;
             height: var(--main-layout-header-height);
-           /*max-width: 960px;*/
+            /*max-width: 960px;*/
             margin: 0 calc(-50vw + 50%);
             padding: 0 calc(50vw - 50% + 16px);
 
@@ -105,8 +105,9 @@
             color: var(--lumo-primary-text-color);
             cursor: default;
         }
+
         .main-layout__nav-item[highlight]:after {
-            content:"";
+            content: "";
             position: absolute;
             bottom: 0;
             left: 25%;
@@ -125,5 +126,21 @@
             box-sizing: border-box;
             pointer-events: none;
         }
+
     </style>
 </custom-style>
+
+<dom-module id="stock-combo-theme-module" theme-for="vaadin-combo-box-item">
+    <template>
+        <style>
+            .position-combo .sub-text {
+                font-size: var(--lumo-font-size-xxs);
+                color: var(--lumo-contrast-30pct);
+            }
+
+            .position-combo .broker {
+                color: var(--lumo-primary-color);
+            }
+        </style>
+    </template>
+</dom-module>

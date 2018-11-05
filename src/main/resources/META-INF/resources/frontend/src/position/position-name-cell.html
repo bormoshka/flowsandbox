@@ -1,0 +1,42 @@
+<link rel="import" href="../../bower_components/vaadin-lumo-styles/color.html">
+<link rel="import" href="../../bower_components/vaadin-lumo-styles/typography.html">
+
+<dom-module id="position-info">
+    <template>
+        <style>
+            .position-name__closed {
+                color: var(--lumo-contrast-60pct);
+            }
+
+            .position-name__open {
+
+                color: var(--lumo-contrast-90pct);
+            }
+
+            .position-name__subtext {
+                font-size: var(--lumo-font-size-xs);
+            }
+
+            .position-name__open .position-name__subtext,
+            .position-name__closed .position-name__subtext {
+                color: var(--lumo-contrast-30pct);
+            }
+        </style>
+        <div class$='position-name__[[position.status]]'>
+            <span class='position-name__text'>  [[position.stockName]]
+                </span>
+            <br>
+            <span class='position-name__subtext'>[[[position.stockCode]]] | [[position.baseCurrency]] | [[position.broker]]</span>
+        </div>
+    </template>
+
+    <script>
+        class PositionInfo extends Polymer.Element {
+            static get is() {
+                return 'position-info';
+            }
+        }
+
+        window.customElements.define(PositionInfo.is, PositionInfo);
+    </script>
+</dom-module>

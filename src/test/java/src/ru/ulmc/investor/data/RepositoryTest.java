@@ -6,24 +6,24 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.transaction.annotation.Transactional;
 import ru.ulmc.investor.Application;
-import ru.ulmc.investor.data.entity.BasePosition;
-import ru.ulmc.investor.data.entity.Currency;
-import ru.ulmc.investor.data.entity.Portfolio;
+import ru.ulmc.investor.data.entity.*;
 import ru.ulmc.investor.data.repository.PortfolioRepository;
 import ru.ulmc.investor.data.repository.PositionRepository;
+import ru.ulmc.investor.data.repository.StockRepository;
+import ru.ulmc.investor.service.StocksService;
 
-import javax.transaction.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Optional;
-import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Slf4j
 @RunWith(SpringRunner.class)
+@Transactional
 @SpringBootTest(classes = Application.class)
 public class RepositoryTest {
 
@@ -31,6 +31,11 @@ public class RepositoryTest {
     private PortfolioRepository portfolioRepository;
     @Autowired
     private PositionRepository positionRepository;
+    @Autowired
+    private StockRepository stockRepository;
+
+    @Autowired
+    private StocksService stocksService;
 
     @Test
     public void testPortfolios() {
@@ -44,44 +49,59 @@ public class RepositoryTest {
     }
 
     @Test
-    @Transactional
     public void testBasePositions() {
-
-        Portfolio portfolio = portfolioRepository.save(getPortfolio());
+        Portfolio portfolio = stocksService.save(getPortfolio());
+        Broker broker = stocksService.save(getBroker("Сбербанк"));
+        StockPosition stockPosition = stocksService.save(getStock(broker));
         long firstPortfolioId = portfolio.getId();
-        positionRepository.save(getBasePosition(portfolio));
-        positionRepository.save(getBasePosition(portfolio));
-        positionRepository.save(getBasePosition(portfolio));
-        positionRepository.save(getBasePosition(portfolio));
+        stocksService.save(getBasePosition(portfolio, stockPosition));
+        stocksService.save(getBasePosition(portfolio, stockPosition));
+        stocksService.save(getBasePosition(portfolio, stockPosition));
+        stocksService.save(getBasePosition(portfolio, stockPosition));
 
-        portfolio = portfolioRepository.save(getPortfolio());
-        positionRepository.save(getBasePosition(portfolio));
-        positionRepository.save(getBasePosition(portfolio));
+        portfolio = stocksService.save(getPortfolio());
+        stocksService.save(getBasePosition(portfolio, stockPosition));
+        stocksService.save(getBasePosition(portfolio, stockPosition));
 
-        ArrayList<BasePosition> list = new ArrayList<>(positionRepository.findAllByPortfolio_Id(firstPortfolioId));
+        ArrayList<Position> list = new ArrayList<>(positionRepository.findAllByPortfolio_Id(firstPortfolioId));
         assertThat(list.size()).isEqualTo(4);
     }
 
-    private BasePosition getBasePosition(Portfolio portfolio) {
-        return BasePosition.builder()
-                .account("MyAccount")
-                .positionCurrency(Currency.RUB)
-                .closeCurrency(Currency.RUB)
+    static Position getBasePosition(Portfolio portfolio, StockPosition stockPosition) {
+        return Position.builder()
+                .stockPosition(stockPosition)
                 .closed(false)
-                .size(10)
+                .quantity(10)
                 .openDate(LocalDateTime.now())
                 .openPrice(BigDecimal.valueOf(10))
-                .code("GOOG")
-                .name("Google " + UUID.randomUUID().toString())
                 .currencyOpenPrice(BigDecimal.ONE)
                 .portfolio(portfolio)
                 .build();
     }
 
-    private Portfolio getPortfolio() {
+    static Portfolio getPortfolio() {
         Portfolio portfolio = new Portfolio();
         portfolio.setName("My portfolio");
         portfolio.setPositions(new ArrayList<>());
         return portfolio;
+    }
+
+    static Broker getBroker(String name) {
+        return Broker.builder().name(name).build();
+    }
+
+    static StockPosition getStock(Broker broker, String name, String code) {
+        return StockPosition.builder()
+                .name(name)
+                .code(code)
+                .stockExchange(StockExchange.NASDAQ)
+                .currency(Currency.RUB)
+                .closeCurrency(Currency.RUB)
+                .broker(broker)
+                .build();
+    }
+
+    static StockPosition getStock(Broker broker) {
+        return getStock(broker, "Google", "GOOG");
     }
 }

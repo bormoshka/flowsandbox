@@ -1,0 +1,45 @@
+<link rel="import" href="../../bower_components/vaadin-lumo-styles/color.html">
+<link rel="import" href="../../bower_components/vaadin-lumo-styles/typography.html">
+
+<dom-module id="position-profit">
+    <template>
+        <style>
+            .price-comparison .price-comparison__profit {
+                color: var(--lumo-success-color);
+            }
+
+            .price-comparison .price-comparison__loss {
+                color: var(--lumo-error-color);
+            }
+
+            .price-comparison .price-comparison__subtext {
+                font-size: var(--lumo-font-size-xs);
+            }
+
+            .price-comparison .price-comparison__subtext {
+                /*color: var(--lumo-contrast-60pct);*/
+            }
+        </style>
+        <div class='price-comparison'>[[position.openPrice]]
+            <template is='dom-if' if='[[position.closed]]'>
+                / <span class$='price-comparison__[[position.profitStatus]]'>[[position.closePrice]]</span>
+            </template>
+            <template is='dom-if' if='[[position.closed]]'>
+                <br>
+                <span class='price-comparison__subtext'>[[position.profit]] [[position.baseCurrency]]
+            [ <span class$='price-comparison__[[position.profitStatus]]'>[[position.profitPercents]]%</span> ]
+            </span>
+            </template>
+        </div>
+    </template>
+
+    <script>
+        class PositionProfit extends Polymer.Element {
+            static get is() {
+                return 'position-profit';
+            }
+        }
+
+        window.customElements.define(PositionProfit.is, PositionProfit);
+    </script>
+</dom-module>

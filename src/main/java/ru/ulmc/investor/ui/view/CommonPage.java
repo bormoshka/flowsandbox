@@ -13,7 +13,7 @@ import ru.ulmc.investor.ui.util.PageParams;
 
 public abstract class CommonPage extends Div implements HasElement, BeforeLeaveObserver,
         BeforeEnterObserver {
-    private UserService userService;
+    protected UserService userService;
     @Getter
     private PageParams pageParams;
     protected VerticalLayout layout = new VerticalLayout();
