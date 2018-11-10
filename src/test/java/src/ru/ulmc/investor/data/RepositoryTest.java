@@ -1,23 +1,26 @@
 package src.ru.ulmc.investor.data;
 
-import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
-import ru.ulmc.investor.Application;
-import ru.ulmc.investor.data.entity.*;
-import ru.ulmc.investor.data.repository.PortfolioRepository;
-import ru.ulmc.investor.data.repository.PositionRepository;
-import ru.ulmc.investor.data.repository.StockRepository;
-import ru.ulmc.investor.service.StocksService;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.UUID;
+
+import lombok.extern.slf4j.Slf4j;
+import ru.ulmc.investor.Application;
+import ru.ulmc.investor.data.entity.*;
+import ru.ulmc.investor.data.entity.Instrument;
+import ru.ulmc.investor.data.repository.PortfolioRepository;
+import ru.ulmc.investor.data.repository.PositionRepository;
+import ru.ulmc.investor.data.repository.StockRepository;
+import ru.ulmc.investor.service.StocksService;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -50,26 +53,27 @@ public class RepositoryTest {
 
     @Test
     public void testBasePositions() {
+        portfolioRepository.findAll().forEach(portfolioRepository::delete);
         Portfolio portfolio = stocksService.save(getPortfolio());
         Broker broker = stocksService.save(getBroker("Сбербанк"));
-        StockPosition stockPosition = stocksService.save(getStock(broker));
+        Instrument instrument = stocksService.save(getStock(broker));
         long firstPortfolioId = portfolio.getId();
-        stocksService.save(getBasePosition(portfolio, stockPosition));
-        stocksService.save(getBasePosition(portfolio, stockPosition));
-        stocksService.save(getBasePosition(portfolio, stockPosition));
-        stocksService.save(getBasePosition(portfolio, stockPosition));
+        stocksService.save(getBasePosition(portfolio, instrument));
+        stocksService.save(getBasePosition(portfolio, instrument));
+        stocksService.save(getBasePosition(portfolio, instrument));
+        stocksService.save(getBasePosition(portfolio, instrument));
 
         portfolio = stocksService.save(getPortfolio());
-        stocksService.save(getBasePosition(portfolio, stockPosition));
-        stocksService.save(getBasePosition(portfolio, stockPosition));
+        stocksService.save(getBasePosition(portfolio, instrument));
+        stocksService.save(getBasePosition(portfolio, instrument));
 
         ArrayList<Position> list = new ArrayList<>(positionRepository.findAllByPortfolio_Id(firstPortfolioId));
         assertThat(list.size()).isEqualTo(4);
     }
 
-    static Position getBasePosition(Portfolio portfolio, StockPosition stockPosition) {
+    static Position getBasePosition(Portfolio portfolio, Instrument instrument) {
         return Position.builder()
-                .stockPosition(stockPosition)
+                .instrument(instrument)
                 .closed(false)
                 .quantity(10)
                 .openDate(LocalDateTime.now())
@@ -81,7 +85,7 @@ public class RepositoryTest {
 
     static Portfolio getPortfolio() {
         Portfolio portfolio = new Portfolio();
-        portfolio.setName("My portfolio");
+        portfolio.setName("My portfolio " + UUID.randomUUID());
         portfolio.setPositions(new ArrayList<>());
         return portfolio;
     }
@@ -90,10 +94,11 @@ public class RepositoryTest {
         return Broker.builder().name(name).build();
     }
 
-    static StockPosition getStock(Broker broker, String name, String code) {
-        return StockPosition.builder()
+    static Instrument getStock(Broker broker, String name, String code) {
+        return Instrument.builder()
                 .name(name)
                 .code(code)
+                .type(InstrumentType.STOCK)
                 .stockExchange(StockExchange.NASDAQ)
                 .currency(Currency.RUB)
                 .closeCurrency(Currency.RUB)
@@ -101,7 +106,7 @@ public class RepositoryTest {
                 .build();
     }
 
-    static StockPosition getStock(Broker broker) {
+    static Instrument getStock(Broker broker) {
         return getStock(broker, "Google", "GOOG");
     }
 }

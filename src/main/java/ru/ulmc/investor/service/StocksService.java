@@ -1,6 +1,5 @@
 package ru.ulmc.investor.service;
 
-import javafx.geometry.Pos;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -8,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.ulmc.investor.data.entity.Broker;
 import ru.ulmc.investor.data.entity.Portfolio;
 import ru.ulmc.investor.data.entity.Position;
-import ru.ulmc.investor.data.entity.StockPosition;
+import ru.ulmc.investor.data.entity.Instrument;
 import ru.ulmc.investor.data.repository.BrokerRepository;
 import ru.ulmc.investor.data.repository.PortfolioRepository;
 import ru.ulmc.investor.data.repository.PositionRepository;
@@ -42,16 +41,16 @@ public class StocksService {
         this.stockRepository = stockRepository;
     }
 
-    public List<StockViewModel> getStockPositions() {
-        Spliterator<StockPosition> spliterator = stockRepository.findAll().spliterator();
+    public List<InstrumentViewModel> getStockPositions() {
+        Spliterator<Instrument> spliterator = stockRepository.findAll().spliterator();
         return StreamSupport.stream(spliterator, false)
-                .map(StockViewModel::of)
+                .map(InstrumentViewModel::of)
                 .collect(toList());
     }
 
-    public List<StockViewModel> getStockPositionsByBrokerId(long brokerId) {
+    public List<InstrumentViewModel> getStockPositionsByBrokerId(long brokerId) {
         return stockRepository.findAllByBroker_Id(brokerId).stream()
-                .map(StockViewModel::of)
+                .map(InstrumentViewModel::of)
                 .collect(toList());
     }
 
@@ -119,13 +118,13 @@ public class StocksService {
     public void closeFractionally(Position open, Position closed) {
         log.debug("Trying to close position from open {} to closed {}", open, closed);
         Optional<Portfolio> portfolio = portfolioRepository.findById(open.getPortfolio().getId());
-        Optional<StockPosition> stock = stockRepository.findById(open.getStockPosition().getId());
+        Optional<Instrument> stock = stockRepository.findById(open.getInstrument().getId());
 
         if (portfolio.isPresent() && stock.isPresent()) {
             open.setPortfolio(portfolio.get());
-            open.setStockPosition(stock.get());
+            open.setInstrument(stock.get());
             closed.setPortfolio(portfolio.get());
-            closed.setStockPosition(stock.get());
+            closed.setInstrument(stock.get());
             open.setQuantity(open.getQuantity() - closed.getQuantity());
             positionRepository.save(open);
             positionRepository.save(closed);
@@ -135,16 +134,16 @@ public class StocksService {
     public Position save(Position model) {
         log.debug("Trying to save position from model {}", model);
         Optional<Portfolio> portfolio = portfolioRepository.findById(model.getPortfolio().getId());
-        Optional<StockPosition> stock = stockRepository.findById(model.getStockPosition().getId());
+        Optional<Instrument> stock = stockRepository.findById(model.getInstrument().getId());
         if (portfolio.isPresent() && stock.isPresent()) {
             model.setPortfolio(portfolio.get());
-            model.setStockPosition(stock.get());
+            model.setInstrument(stock.get());
             return positionRepository.save(model);
         }
         return null;
     }
 
-    public StockPosition save(StockPosition model) {
+    public Instrument save(Instrument model) {
         log.debug("Trying to save position from model {}", model);
         Optional<Broker> byId = brokerRepository.findById(model.getBroker().getId());
         if (byId.isPresent()) {

@@ -21,12 +21,10 @@ import ru.ulmc.investor.user.UserSettings;
 @Route(value = "", layout = MainLayout.class)
 public class MainPage extends CommonPage {
     public static final PageParams PAGE = PageParams.from(Permission.FRONT_PAGE_READ).build();
-    private final UserService userService;
 
     @Autowired
     public MainPage(UserService userService) {
         super(userService, PAGE);
-        this.userService = userService;
         layout.add(new Label("Hello!"));
     }
 
@@ -38,18 +36,18 @@ public class MainPage extends CommonPage {
 
     @Override
     public void beforeLeave(BeforeLeaveEvent event) {
-        UserSettings userSettings = userService.getCurrentUser().getUserSettings();
-        if (!userSettings.isHelloMessageRead()) {
-            BeforeLeaveEvent.ContinueNavigationAction action = event.postpone();
-            Dialog dialog = new Dialog();
-            dialog.addDialogCloseActionListener(clsEvent -> {
-                userSettings.setHelloMessageRead(true);
-                dialog.close();
-                action.proceed();});
-            dialog.setCloseOnEsc(true);
-            dialog.setCloseOnOutsideClick(true);
-            dialog.add(new Label("Просто хотел сказать \"привет!\" перед тем как ты покинешь эту страницу."));
-            dialog.open();
-        }
+       // UserSettings userSettings = userService.getCurrentUser().getUserSettings();
+       // if (!userSettings.isHelloMessageRead()) {
+       //     BeforeLeaveEvent.ContinueNavigationAction action = event.postpone();
+       //     Dialog dialog = new Dialog();
+       //     dialog.addDialogCloseActionListener(clsEvent -> {
+       //         userSettings.setHelloMessageRead(true);
+       //         dialog.close();
+       //         action.proceed();});
+       //     dialog.setCloseOnEsc(true);
+       //     dialog.setCloseOnOutsideClick(true);
+       //     dialog.add(new Label("Просто хотел сказать \"привет!\" перед тем как ты покинешь эту страницу."));
+       //     //dialog.open(); // todo: удалить эту демку
+       // }
     }
 }

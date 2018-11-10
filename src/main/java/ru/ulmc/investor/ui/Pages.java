@@ -2,6 +2,7 @@ package ru.ulmc.investor.ui;
 
 import com.vaadin.flow.component.Component;
 import io.github.classgraph.*;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import ru.ulmc.investor.ui.util.TopLevelPage;
 import ru.ulmc.investor.ui.util.TopLevelPageInfo;
@@ -32,6 +33,7 @@ public class Pages {
     }
 
     @SuppressWarnings("unchecked")
+    @SneakyThrows
     private static TopLevelPageInfo extractPageInfo(String canonicalName, ClassInfo classInfo) {
         AnnotationInfo topLevelInfo = classInfo.getAnnotationInfo(canonicalName);
         List<AnnotationParameterValue> topLevelParams = topLevelInfo.getParameterValues();
@@ -57,6 +59,6 @@ public class Pages {
                 .name(name)
                 .headingText(headingText)
                 .order(order)
-                .target((Class<? extends Component>) classInfo.loadClass()).build();
+                .target((Class<? extends Component>) Pages.class.getClassLoader().loadClass(classInfo.getName())).build();
     }
 }

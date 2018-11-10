@@ -87,7 +87,7 @@ public class PortfolioViewModel implements Serializable {
 
         private static PositionsStat of(Position pos) {
             PositionsStat ps = new PositionsStat();
-            ps.currency = pos.getStockPosition().getCurrency();
+            ps.currency = pos.getInstrument().getCurrency();
             if (pos.getClosed()) {
                 ps.closedPositionSum = pos.getClosePrice()
                         .multiply(BigDecimal.valueOf(pos.getQuantity()));

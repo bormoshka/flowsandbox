@@ -14,7 +14,6 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import ru.ulmc.investor.data.entity.Position;
 import ru.ulmc.investor.service.StocksService;
 import ru.ulmc.investor.ui.MainLayout;
 import ru.ulmc.investor.ui.entity.PositionViewModel;
@@ -98,7 +97,7 @@ public class PositionCloseEditor extends PositionEditor {
 
     @Override
     protected void onSave(PositionViewModel bean) {
-        String text = "Позиция \"" + bean.getStockPosition().getName();
+        String text = "Позиция \"" + bean.getInstrument().getName();
         bean.setClosed(true);
         if (bean.getQuantity() == originalModel.getQuantity()) {
             text += "\" успешно закрыта!";

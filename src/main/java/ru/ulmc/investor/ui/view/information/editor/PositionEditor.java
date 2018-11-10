@@ -17,12 +17,12 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import ru.ulmc.investor.data.entity.StockPosition;
+import ru.ulmc.investor.data.entity.Instrument;
 import ru.ulmc.investor.service.StocksService;
 import ru.ulmc.investor.ui.MainLayout;
 import ru.ulmc.investor.ui.entity.PortfolioLightModel;
 import ru.ulmc.investor.ui.entity.PositionViewModel;
-import ru.ulmc.investor.ui.entity.StockViewModel;
+import ru.ulmc.investor.ui.entity.InstrumentViewModel;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
@@ -50,7 +50,7 @@ public class PositionEditor extends CommonPopupEditor<PositionViewModel> {
     TextField currencyPrice = new TextField("Цена валюты");
     DatePicker date = new DatePicker(getDateLabel());
     TextField time = new TextField(getTimeLabel());
-    private ComboBox<StockViewModel> stockComboBox = new ComboBox<>("Позиция");
+    private ComboBox<InstrumentViewModel> stockComboBox = new ComboBox<>("Позиция");
     private int fieldWidth = 200;
     private StocksService stocksService;
 
@@ -118,13 +118,12 @@ public class PositionEditor extends CommonPopupEditor<PositionViewModel> {
     @Override
     protected void onSave(PositionViewModel bean) {
         stocksService.save(PositionViewModel.toEntity(bean));
-        String text = "Позиция \"" + bean.getStockPosition().getName() + "\" успешно сохранена!";
+        String text = "Позиция \"" + bean.getInstrument().getName() + "\" успешно сохранена!";
         Notification.show(text, 2500, Notification.Position.MIDDLE);
     }
 
     @Override
     protected void initFields() {
-
         quantity.setPattern("[0-9]*");
         quantity.setPreventInvalidInput(true);
         quantity.setWidth("50%");
@@ -143,7 +142,6 @@ public class PositionEditor extends CommonPopupEditor<PositionViewModel> {
         price.setRequired(true);
         price.setWidth("50%");
 
-
         currencyPrice.setPattern(DECIMAL_PATTERN);
         currencyPrice.setRequired(true);
         currencyPrice.setValue("1");
@@ -156,13 +154,13 @@ public class PositionEditor extends CommonPopupEditor<PositionViewModel> {
         stockComboBox.setWidth("50%");
         stockComboBox.setAutofocus(true);
         stockComboBox.setAllowCustomValue(false);
-        stockComboBox.setItemLabelGenerator(StockViewModel::getName);
-        stockComboBox.setRenderer(TemplateRenderer.<StockViewModel>of(getTemplate())
-                .withProperty("name", StockViewModel::getName)
-                .withProperty("currency", StockViewModel::getCurrency)
-                .withProperty("currencyClose", StockViewModel::getCloseCurrency)
+        stockComboBox.setItemLabelGenerator(InstrumentViewModel::getName);
+        stockComboBox.setRenderer(TemplateRenderer.<InstrumentViewModel>of(getTemplate())
+                .withProperty("name", InstrumentViewModel::getName)
+                .withProperty("currency", InstrumentViewModel::getCurrency)
+                .withProperty("currencyClose", InstrumentViewModel::getCloseCurrency)
                 .withProperty("broker", stockViewModel -> stockViewModel.getBroker().getName())
-                .withProperty("code", StockViewModel::getCode));
+                .withProperty("code", InstrumentViewModel::getCode));
     }
 
     private String getTemplate() {
@@ -173,7 +171,7 @@ public class PositionEditor extends CommonPopupEditor<PositionViewModel> {
     }
 
     private void loadStockData() {
-        List<StockViewModel> stockPositions = stocksService.getStockPositions();
+        List<InstrumentViewModel> stockPositions = stocksService.getStockPositions();
         stockComboBox.setFilteredItems(stockPositions);
         stockComboBox.setItems(stockPositions);
     }
@@ -181,7 +179,7 @@ public class PositionEditor extends CommonPopupEditor<PositionViewModel> {
     public void create(@NonNull PortfolioLightModel parent) {
         edit(PositionViewModel.builder()
                 .portfolio(parent)
-                .stockPosition(StockViewModel.of(StockPosition.empty()))
+                .instrument(InstrumentViewModel.of(Instrument.empty()))
                 .build());
     }
 
@@ -303,18 +301,18 @@ public class PositionEditor extends CommonPopupEditor<PositionViewModel> {
             return String.valueOf(position.getQuantity());
         }
 
-        static void setStock(PositionViewModel position, StockViewModel stock) {
+        static void setStock(PositionViewModel position, InstrumentViewModel stock) {
             if (stock == null) {
                 return;
             }
-            position.setStockPosition(stock);
+            position.setInstrument(stock);
         }
 
-        static StockViewModel getStock(PositionViewModel position) {
-            if (position.getStockPosition().getId() == null) {
+        static InstrumentViewModel getStock(PositionViewModel position) {
+            if (position.getInstrument().getId() == null) {
                 return null;
             }
-            return position.getStockPosition();
+            return position.getInstrument();
         }
 
         static boolean isEmpty(String s) {

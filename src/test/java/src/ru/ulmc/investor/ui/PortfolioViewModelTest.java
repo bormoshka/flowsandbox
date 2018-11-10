@@ -25,16 +25,17 @@ public class PortfolioViewModelTest {
     }
 
     private Position getBasePosition(Portfolio portfolio, Currency currency, boolean isClosed) {
-        StockPosition stockPosition = StockPosition.builder()
+        Instrument instrument = Instrument.builder()
                 .name("Google " + UUID.randomUUID().toString())
                 .code("GOOG")
+                .type(InstrumentType.STOCK)
                 .stockExchange(StockExchange.NASDAQ)
                 .broker(Broker.builder().name("Sberbank").build())
                 .currency(currency)
                 .closeCurrency(currency)
                 .build();
         return Position.builder()
-                .stockPosition(stockPosition)
+                .instrument(instrument)
                 .closed(isClosed)
                 .currencyClosePrice(BigDecimal.ONE)
                 .closePrice(BigDecimal.valueOf(3))

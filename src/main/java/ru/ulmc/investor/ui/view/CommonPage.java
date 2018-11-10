@@ -22,7 +22,7 @@ public abstract class CommonPage extends Div implements HasElement, BeforeLeaveO
         this.userService = userService;
         this.pageParams = pageParams;
         setupLayout();
-        addClassName("main-layout__content");
+        addClassName("root-layout__content");
         //setTitle(pageParams.getPageHeading());
     }
 

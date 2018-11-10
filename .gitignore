@@ -86,3 +86,13 @@ gradle-app.setting
 
 # # Work around https://youtrack.jetbrains.com/issue/IDEA-116898
 # gradle/wrapper/gradle-wrapper.properties
+/.idea/
+.idea/codeStyles/
+.idea/compiler.xml
+.idea/encodings.xml
+.idea/flowsandbox.iml
+.idea/hotswap_agent.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/sonarlint/
+.idea/vcs.xml

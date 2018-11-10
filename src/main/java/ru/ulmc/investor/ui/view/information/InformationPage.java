@@ -21,13 +21,13 @@ import ru.ulmc.investor.service.UserService;
 import ru.ulmc.investor.ui.MainLayout;
 import ru.ulmc.investor.ui.component.ConfirmDialog;
 import ru.ulmc.investor.ui.entity.BrokerLightModel;
-import ru.ulmc.investor.ui.entity.StockViewModel;
+import ru.ulmc.investor.ui.entity.InstrumentViewModel;
 import ru.ulmc.investor.ui.util.Notify;
 import ru.ulmc.investor.ui.util.PageParams;
 import ru.ulmc.investor.ui.util.TopLevelPage;
 import ru.ulmc.investor.ui.view.CommonPage;
 import ru.ulmc.investor.ui.view.information.editor.BrokerEditor;
-import ru.ulmc.investor.ui.view.information.editor.StockEditor;
+import ru.ulmc.investor.ui.view.information.editor.InstrumentEditor;
 import ru.ulmc.investor.user.Permission;
 
 import java.util.List;
@@ -41,8 +41,8 @@ public class InformationPage extends CommonPage {
     public static final PageParams PAGE = PageParams.from(Permission.INFORMATION_READ).build();
     private final StocksService stocksService;
     private final BrokerEditor brokerEditor;
-    private final StockEditor stockEditor;
-    private Grid<StockViewModel> stocksGrid = new Grid<>();
+    private final InstrumentEditor instrumentEditor;
+    private Grid<InstrumentViewModel> stocksGrid = new Grid<>();
     private Grid<BrokerLightModel> brokersGrid = new Grid<>();
     private Button addBrokerBtn;
     private Button addStockBtn;
@@ -51,14 +51,14 @@ public class InformationPage extends CommonPage {
     public InformationPage(UserService userService,
                            StocksService stocksService,
                            BrokerEditor brokerEditor,
-                           StockEditor stockEditor) {
+                           InstrumentEditor instrumentEditor) {
         super(userService, PAGE);
         this.stocksService = stocksService;
         this.brokerEditor = brokerEditor;
-        this.stockEditor = stockEditor;
+        this.instrumentEditor = instrumentEditor;
 
         brokerEditor.addOpenedChangeListener(this::onEditorClose);
-        stockEditor.addOpenedChangeListener(this::onEditorClose);
+        instrumentEditor.addOpenedChangeListener(this::onEditorClose);
         init();
     }
 
@@ -99,10 +99,10 @@ public class InformationPage extends CommonPage {
     }
 
     private void initStocksGrid() {
-        stocksGrid.addColumn(StockViewModel::getName)
+        stocksGrid.addColumn(InstrumentViewModel::getName)
                 .setHeader("Название")
                 .setFlexGrow(4);
-        stocksGrid.addColumn(StockViewModel::getCode)
+        stocksGrid.addColumn(InstrumentViewModel::getCode)
                 .setHeader("Код");
         stocksGrid.addColumn(model -> model.getCurrency() + " -> " + model.getCloseCurrency())
                 .setHeader("Валюты");
@@ -130,7 +130,7 @@ public class InformationPage extends CommonPage {
     }
 
     private void reloadStocks(BrokerLightModel broker) {
-        List<StockViewModel> stocks = stocksService.getStockPositionsByBrokerId(broker.getId());
+        List<InstrumentViewModel> stocks = stocksService.getStockPositionsByBrokerId(broker.getId());
         stocksGrid.setItems(stocks);
     }
 
@@ -142,7 +142,7 @@ public class InformationPage extends CommonPage {
         addStockBtn = new Button("Добавить позицию", new Icon(VaadinIcon.PLUS));
         addStockBtn.setEnabled(false);
         addStockBtn.addClickListener(buttonClickEvent ->
-                brokersGrid.getSelectionModel().getFirstSelectedItem().ifPresent(stockEditor::create));
+                brokersGrid.getSelectionModel().getFirstSelectedItem().ifPresent(instrumentEditor::create));
 
         return new HorizontalLayout(addBrokerBtn, addStockBtn);
     }
@@ -174,10 +174,10 @@ public class InformationPage extends CommonPage {
         return hl;
     }
 
-    private Component createRowControls(StockViewModel model) {
+    private Component createRowControls(InstrumentViewModel model) {
 
         Button editBtn = new Button(new Icon(VaadinIcon.PENCIL));
-        editBtn.addClickListener(buttonClickEvent -> stockEditor.edit(model));
+        editBtn.addClickListener(buttonClickEvent -> instrumentEditor.edit(model));
         Button removeBtn = new Button(new Icon(VaadinIcon.TRASH));
         removeBtn.addClickListener(buttonClickEvent -> {
             String text = "Эта операция безвозвратно удалит справочный актив \"" + model.getName() + "\"?";

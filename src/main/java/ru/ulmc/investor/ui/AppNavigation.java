@@ -24,12 +24,12 @@ public class AppNavigation extends Div implements RouterLayout {
     public AppNavigation() {
         log.debug("Starting page info scanner");
         getPages().forEach(this::addPage);
-        addClassName("main-layout__nav");
+        addClassName("root-layout__nav");
     }
 
     private void addPage(TopLevelPageInfo page) {
         RouterLink link = new RouterLink(page.getName(), page.getTarget());
-        link.addClassName("main-layout__nav-item");
+        link.addClassName("root-layout__nav-item");
         link.setHighlightCondition(HighlightConditions.sameLocation());
         add(link);
     }

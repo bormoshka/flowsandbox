@@ -34,7 +34,7 @@ public class Position {
     @NonNull
     @ManyToOne(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH})
     @JoinColumn(name = "STOCK_ID", nullable = false)
-    private StockPosition stockPosition;
+    private Instrument instrument;
 
     @NonNull
     @Builder.Default
@@ -93,7 +93,7 @@ public class Position {
 
     public Position copy() {
         return Position.builder()
-                .stockPosition(stockPosition)
+                .instrument(instrument)
                 .closed(closed)
                 .quantity(quantity)
                 .openDate(openDate)

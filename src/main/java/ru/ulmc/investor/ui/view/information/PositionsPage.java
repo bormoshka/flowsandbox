@@ -176,12 +176,12 @@ public class PositionsPage extends CommonPage {
         grid.addColumn(getNameRenderer())
                 .setFlexGrow(10)
                 .setHeader("Название");
-        grid.addColumn(PositionViewModel::getQuantity)
-                .setFlexGrow(5)
-                .setHeader("Размер");
         grid.addColumn(model -> df.format(model.getOpenDate()))
                 .setFlexGrow(5)
                 .setHeader("Дата открытия");
+        grid.addColumn(PositionViewModel::getQuantity)
+                .setFlexGrow(5)
+                .setHeader("Размер");
         grid.addColumn(getPriceRenderer())
                 .setFlexGrow(5)
                 .setHeader("Цена открытия");

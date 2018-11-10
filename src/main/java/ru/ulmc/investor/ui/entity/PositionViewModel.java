@@ -12,12 +12,12 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-@EqualsAndHashCode(of = {"id", "stockPosition"})
+@EqualsAndHashCode(of = {"id", "instrument"})
 public class PositionViewModel {
     private Long id;
     private String comment;
     private PortfolioLightModel portfolio;
-    private StockViewModel stockPosition;
+    private InstrumentViewModel instrument;
     private int quantity;
     private LocalDateTime openDate;
     private LocalDateTime closeDate;
@@ -34,7 +34,7 @@ public class PositionViewModel {
                 .id(position.getId())
                 .comment(position.getComment())
                 .portfolio(PortfolioLightModel.of(position.getPortfolio()))
-                .stockPosition(StockViewModel.of(position.getStockPosition()))
+                .instrument(InstrumentViewModel.of(position.getInstrument()))
                 .quantity(position.getQuantity())
                 .openDate(position.getOpenDate())
                 .closeDate(position.getCloseDate())
@@ -51,7 +51,7 @@ public class PositionViewModel {
                 .id(position.getId())
                 .comment(position.getComment())
                 .portfolio(PortfolioLightModel.toEntity(position.getPortfolio()))
-                .stockPosition(StockViewModel.toEntity(position.getStockPosition()))
+                .instrument(InstrumentViewModel.toEntity(position.getInstrument()))
                 .quantity(position.getQuantity())
                 .openDate(position.getOpenDate())
                 .closeDate(position.getCloseDate())
@@ -77,19 +77,19 @@ public class PositionViewModel {
     }
 
     public String getBroker() {
-        return getStockPosition().getBroker().getName();
+        return instrument.getBroker().getName();
     }
 
     public String getBaseCurrency() {
-        return getStockPosition().getCurrency().name();
+        return instrument.getCurrency().name();
     }
 
     public String getStockCode() {
-        return getStockPosition().getCode();
+        return instrument.getCode();
     }
 
     public String getStockName() {
-        return getStockPosition().getName();
+        return instrument.getName();
     }
 
     public BigDecimal getProfit() {

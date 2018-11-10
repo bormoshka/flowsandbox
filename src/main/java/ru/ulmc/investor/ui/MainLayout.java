@@ -15,15 +15,15 @@ public class MainLayout extends Div implements RouterLayout {
 
     public MainLayout() {
         H2 title = new H2("Couch Investor");
-        title.addClassName("main-layout__title"); // Я уже ненавижу BEM
+        title.addClassName("root-layout__title"); // Я уже ненавижу BEM
 
         AppNavigation appNavigation = new AppNavigation();
 
         Div header = new Div(title, appNavigation);
-        header.addClassName("main-layout__header"); // Меньшее из зол
+        header.addClassName("root-layout__header"); // Меньшее из зол
         add(header);
 
-        addClassName("main-layout");
+        addClassName("root-layout");
         setSizeFull();
     }
 }

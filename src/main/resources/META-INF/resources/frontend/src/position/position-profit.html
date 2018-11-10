@@ -20,10 +20,12 @@
                 /*color: var(--lumo-contrast-60pct);*/
             }
         </style>
-        <div class='price-comparison'>[[position.openPrice]]
+        <div class='price-comparison'>
+            [[position.openPrice]]
             <template is='dom-if' if='[[position.closed]]'>
-                / <span class$='price-comparison__[[position.profitStatus]]'>[[position.closePrice]]</span>
+                / <span class$='price-comparison__[[position.profitStatus]]'>[[position.closePrice]] </span>
             </template>
+            <span class='price-comparison__subtext'>[[position.baseCurrency]]</span>
             <template is='dom-if' if='[[position.closed]]'>
                 <br>
                 <span class='price-comparison__subtext'>[[position.profit]] [[position.baseCurrency]]
