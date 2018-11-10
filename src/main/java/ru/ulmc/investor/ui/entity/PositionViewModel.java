@@ -5,6 +5,7 @@ import ru.ulmc.investor.data.entity.Position;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Getter
 @Setter
@@ -14,6 +15,8 @@ import java.time.LocalDateTime;
 @Builder(toBuilder = true)
 @EqualsAndHashCode(of = {"id", "instrument"})
 public class PositionViewModel {
+    private static final DateTimeFormatter df = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+
     private Long id;
     private String comment;
     private PortfolioLightModel portfolio;
@@ -110,5 +113,11 @@ public class PositionViewModel {
                 .divide(openPrice.multiply(size), 4, BigDecimal.ROUND_HALF_UP);
     }
 
+    public String getOpenDateFormatted() {
+        return df.format(openDate);
+    }
 
+    public String getCloseDateFormatted() {
+        return closeDate == null ? null : df.format(closeDate);
+    }
 }

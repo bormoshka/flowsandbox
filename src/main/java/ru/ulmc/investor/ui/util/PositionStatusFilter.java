@@ -9,6 +9,6 @@ public enum PositionStatusFilter {
     ALL("Все"),
     OPEN("Открытые"),
     CLOSED("Закрытые");
-    private final String name;
+    private final String description;
 
 }

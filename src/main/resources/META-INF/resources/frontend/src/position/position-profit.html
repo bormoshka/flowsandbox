@@ -28,7 +28,7 @@
             <span class='price-comparison__subtext'>[[position.baseCurrency]]</span>
             <template is='dom-if' if='[[position.closed]]'>
                 <br>
-                <span class='price-comparison__subtext'>[[position.profit]] [[position.baseCurrency]]
+                <span class$='price-comparison__subtext price-comparison__[[position.profitStatus]]'>[[position.profit]] [[position.baseCurrency]]
             [ <span class$='price-comparison__[[position.profitStatus]]'>[[position.profitPercents]]%</span> ]
             </span>
             </template>

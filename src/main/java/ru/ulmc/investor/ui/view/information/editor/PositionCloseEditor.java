@@ -97,8 +97,8 @@ public class PositionCloseEditor extends PositionEditor {
 
     @Override
     protected void onSave(PositionViewModel bean) {
+        finishBeanClosing(bean);
         String text = "Позиция \"" + bean.getInstrument().getName();
-        bean.setClosed(true);
         if (bean.getQuantity() == originalModel.getQuantity()) {
             text += "\" успешно закрыта!";
             bean.setId(originalModel.getId());
@@ -108,6 +108,13 @@ public class PositionCloseEditor extends PositionEditor {
             stocksService.closeFractionally(toEntity(originalModel), toEntity(bean));
         }
         Notification.show(text, 2500, Notification.Position.MIDDLE);
+    }
+
+    private void finishBeanClosing(PositionViewModel bean) {
+        if(bean.getCloseDate() == null) {
+            bean.setCloseDate(LocalDateTime.now());
+        }
+        bean.setClosed(true);
     }
 
     @Override

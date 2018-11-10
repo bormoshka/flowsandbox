@@ -1,0 +1,28 @@
+<link rel="import" href="../../bower_components/vaadin-lumo-styles/color.html">
+<link rel="import" href="../../bower_components/vaadin-lumo-styles/typography.html">
+
+<dom-module id="position-date">
+    <template>
+        <style>
+            .position-date__closed {
+                color: var(--lumo-contrast-60pct);
+            }
+        </style>
+        <div>
+            <span class$='position-date__[[position.status]]'>[[position.openDateFormatted]]</span>
+            <template is='dom-if' if='[[position.closed]]'>
+                / <span>[[position.closeDateFormatted]]</span>
+            </template>
+        </div>
+    </template>
+
+    <script>
+        class PositionDate extends Polymer.Element {
+            static get is() {
+                return 'position-date';
+            }
+        }
+
+        window.customElements.define(PositionDate.is, PositionDate);
+    </script>
+</dom-module>
