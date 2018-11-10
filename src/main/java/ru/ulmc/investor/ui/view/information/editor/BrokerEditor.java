@@ -1,8 +1,10 @@
 package ru.ulmc.investor.ui.view.information.editor;
 
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.RequiredFieldConfigurator;
@@ -24,13 +26,17 @@ public class BrokerEditor extends CommonPopupEditor<Broker> {
     public BrokerEditor(StocksService stocksService) {
         this.stocksService = stocksService;
         init();
+        setWidth("350px");
     }
 
     @Override
     protected void layout() {
-        HorizontalLayout hl = initControls();
-        FormLayout form = new FormLayout(name, hl);
-        add(form);
+        FormLayout form = new FormLayout(name);
+        form.setWidth("100%");
+        VerticalLayout vl = new VerticalLayout(getTitle("Редактирование брокера:"),
+                form,
+                getControls());
+        add(vl);
     }
 
     @Override
@@ -42,15 +48,15 @@ public class BrokerEditor extends CommonPopupEditor<Broker> {
     }
 
     @Override
+    protected void initFields() {
+        name = new TextField("Название");
+    }
+
+    @Override
     protected void onSave(Broker bean) {
         stocksService.save(bean);
         String text = "Портфолио \"" + bean.getName() + "\" успешно сохранено!";
         Notification.show(text, 2500, Notification.Position.MIDDLE);
-    }
-
-    @Override
-    protected void initFields() {
-        name = new TextField("Название");
     }
 
     public void create() {

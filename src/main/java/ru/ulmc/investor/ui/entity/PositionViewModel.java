@@ -4,6 +4,7 @@ import lombok.*;
 import ru.ulmc.investor.data.entity.Position;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -95,6 +96,15 @@ public class PositionViewModel {
         return instrument.getName();
     }
 
+    public BigDecimal getProfitPercents() {
+        if (!closed) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal size = BigDecimal.valueOf(quantity);
+        return getProfit().multiply(BigDecimal.valueOf(100))
+                .divide(openPrice.multiply(size), 2, BigDecimal.ROUND_HALF_UP);
+    }
+
     public BigDecimal getProfit() {
         if (!closed) {
             return BigDecimal.ZERO;
@@ -104,20 +114,37 @@ public class PositionViewModel {
         return closePrice.subtract(openPrice).multiply(size);
     }
 
-    public BigDecimal getProfitPercents() {
-        if (!closed) {
-            return BigDecimal.ZERO;
-        }
-        BigDecimal size = BigDecimal.valueOf(quantity);
-        return getProfit().multiply(BigDecimal.valueOf(100))
-                .divide(openPrice.multiply(size), 4, BigDecimal.ROUND_HALF_UP);
-    }
-
     public String getOpenDateFormatted() {
         return df.format(openDate);
     }
 
     public String getCloseDateFormatted() {
         return closeDate == null ? null : df.format(closeDate);
+    }
+
+
+    public String getOpenPeriod() {
+        return closeDate == null ? "0" : getOpenPeriodUnsafe();
+    }
+
+    /**
+     * Приблизительное время в часах/днях/месяцах/годах позиции перед закрытием
+     */
+    private String getOpenPeriodUnsafe() {
+        Duration between = Duration.between(openDate, closeDate);
+        long days = between.toDays();
+        if (days > 30) {
+            long years = days % 365;
+            if (years >= 1) {
+                return years + " л.";
+            } else {
+                return days % 30 + " м.";
+            }
+        } else if (days < 2) {
+            return between.toHours() + " ч.";
+        } else {
+            return days + " д.";
+        }
+
     }
 }

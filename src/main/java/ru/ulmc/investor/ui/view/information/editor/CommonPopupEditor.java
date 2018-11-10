@@ -2,6 +2,7 @@ package ru.ulmc.investor.ui.view.information.editor;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -27,6 +28,12 @@ public abstract class CommonPopupEditor<T> extends Dialog implements RouterLayou
         }
     }
 
+    protected H4 getTitle(String text) {
+        H4 h4 = new H4(text);
+        h4.setWidth("100%");
+        return h4;
+    }
+
     protected void init() {
         if (!initialized) {
             initFields();
@@ -42,7 +49,7 @@ public abstract class CommonPopupEditor<T> extends Dialog implements RouterLayou
 
     protected abstract void initFields();
 
-    protected HorizontalLayout initControls() {
+    protected HorizontalLayout getControls() {
         saveBtn = new Button("Сохранить");
 
         saveBtn.getElement().setAttribute("theme", "primary");

@@ -26,8 +26,9 @@ import ru.ulmc.investor.ui.util.PositionStatusFilter;
 import ru.ulmc.investor.ui.util.RouterUtil;
 import ru.ulmc.investor.ui.util.TopLevelPage;
 import ru.ulmc.investor.ui.view.CommonPage;
-import ru.ulmc.investor.ui.view.information.editor.PositionCloseEditor;
-import ru.ulmc.investor.ui.view.information.editor.PositionEditor;
+import ru.ulmc.investor.ui.view.information.editor.ClosedPositionEditor;
+import ru.ulmc.investor.ui.view.information.editor.FullPositionEditor;
+import ru.ulmc.investor.ui.view.information.editor.OpenPositionEditor;
 import ru.ulmc.investor.user.Permission;
 
 import java.util.List;
@@ -46,9 +47,10 @@ import static ru.ulmc.investor.ui.util.RouterUtil.unescapeParams;
 public class PositionsPage extends CommonPage implements HasUrlParameter<String> {
     public static final PageParams PAGE = PageParams.from(Permission.INFORMATION_READ).build();
 
-    private final PositionCloseEditor positionCloseEditor;
+    private final ClosedPositionEditor closedPositionEditor;
+    private final FullPositionEditor fullPositionEditor;
     private StocksService stocksService;
-    private PositionEditor positionEditor;
+    private OpenPositionEditor openPositionEditor;
     private Grid<PositionViewModel> grid;
     private HorizontalLayout controlsLayout;
     private Button addBtn;
@@ -58,13 +60,15 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
     @Autowired
     public PositionsPage(UserService userService,
                          StocksService stocksService,
-                         PositionEditor positionEditor,
-                         PositionCloseEditor positionCloseEditor) {
+                         FullPositionEditor fullPositionEditor,
+                         OpenPositionEditor openPositionEditor,
+                         ClosedPositionEditor closedPositionEditor) {
         super(userService, PAGE);
         this.stocksService = stocksService;
-        this.positionEditor = positionEditor;
-        this.positionCloseEditor = positionCloseEditor;
-        positionEditor.addOpenedChangeListener(event -> {
+        this.fullPositionEditor = fullPositionEditor;
+        this.openPositionEditor = openPositionEditor;
+        this.closedPositionEditor = closedPositionEditor;
+        openPositionEditor.addOpenedChangeListener(event -> {
             if (!event.isOpened()) {
                 onFilterStateChange(event);
             }
@@ -184,7 +188,7 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
         addBtn = new Button("Добавить", new Icon(VaadinIcon.PLUS));
         addBtn.setEnabled(false);
         addBtn.addClickListener(buttonClickEvent -> {
-            positionEditor.create(portfolioComboBox.getValue());
+            openPositionEditor.create(portfolioComboBox.getValue());
         });
     }
 
@@ -212,14 +216,18 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
     private Component createRowControls(PositionViewModel pvm) {
         Button editBtn = new Button(new Icon(VaadinIcon.PENCIL));
         editBtn.addClickListener(buttonClickEvent -> {
-            positionEditor.edit(pvm);
+            if (pvm.isClosed()) {
+                fullPositionEditor.edit(pvm);
+            } else {
+                openPositionEditor.edit(pvm);
+            }
         });
         HorizontalLayout hl = new HorizontalLayout();
         hl.setSizeFull();
         if (!pvm.isClosed()) {
             Button closePositionBtn = new Button(new Icon(VaadinIcon.CLOSE_BIG));
             closePositionBtn.getElement().setAttribute("title", "Закрыть позицию");
-            closePositionBtn.addClickListener(buttonClickEvent -> positionCloseEditor.edit(pvm));
+            closePositionBtn.addClickListener(buttonClickEvent -> closedPositionEditor.edit(pvm));
             hl.add(closePositionBtn);
         }
         hl.add(editBtn);
@@ -232,7 +240,7 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
         if (s != null) {
             log.debug("With Parameter {}", s);
             List<String> params = unescapeParams(s);
-            if(params.size() == 2) {
+            if (params.size() == 2) {
                 statusFilter.setValue(PositionStatusFilter.valueOf(params.get(1)));
                 applyFilters(Long.valueOf(params.get(0)));
             }

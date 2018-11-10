@@ -7,11 +7,18 @@
             .position-date__closed {
                 color: var(--lumo-contrast-60pct);
             }
+
+            .position-date__last-date {
+                color: var(--lumo-primary-color);
+            }
         </style>
         <div>
             <span class$='position-date__[[position.status]]'>[[position.openDateFormatted]]</span>
             <template is='dom-if' if='[[position.closed]]'>
-                / <span>[[position.closeDateFormatted]]</span>
+                <br>
+                <span class="position-date__last-date">
+                    [[position.closeDateFormatted]] [[[position.openPeriod]]]
+                </span>
             </template>
         </div>
     </template>

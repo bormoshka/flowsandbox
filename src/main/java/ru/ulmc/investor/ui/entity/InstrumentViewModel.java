@@ -41,6 +41,7 @@ public class InstrumentViewModel implements Serializable {
                 .build();
     }
     public static Instrument toEntity(InstrumentViewModel model) {
+        Currency closeCurrency = model.getCloseCurrency();
         return Instrument.builder()
                 .id(model.getId())
                 .name(model.getName())
@@ -48,7 +49,7 @@ public class InstrumentViewModel implements Serializable {
                 .type(model.getType())
                 .stockExchange(model.getStockExchange())
                 .currency(model.getCurrency())
-                .closeCurrency(model.getCloseCurrency())
+                .closeCurrency(closeCurrency == null ? model.getCurrency() : closeCurrency)
                 .broker(BrokerLightModel.toEntity(model.getBroker()))
                 .build();
     }

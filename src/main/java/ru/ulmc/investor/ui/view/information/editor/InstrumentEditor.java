@@ -1,6 +1,7 @@
 package ru.ulmc.investor.ui.view.information.editor;
 
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
@@ -46,14 +47,15 @@ public class InstrumentEditor extends CommonPopupEditor<InstrumentViewModel> {
 
     @Override
     protected void layout() {
-        HorizontalLayout controls = initControls();
+        HorizontalLayout controls = getControls();
 
         HorizontalLayout descRow = new HorizontalLayout(name, code);
         descRow.setWidth("100%");
         HorizontalLayout currencyRow = new HorizontalLayout(instrumentType, positionCurrency, positionCloseCurrency);
         currencyRow.setWidth("100%");
 
-        VerticalLayout verticalLayout = new VerticalLayout(descRow, currencyRow, broker, controls);
+        VerticalLayout verticalLayout = new VerticalLayout(getTitle("Редактирование инструмента:"),
+                descRow, currencyRow, broker, controls);
         add(verticalLayout);
     }
 
@@ -69,14 +71,6 @@ public class InstrumentEditor extends CommonPopupEditor<InstrumentViewModel> {
 
         binder.setRequiredConfigurator(RequiredFieldConfigurator.NOT_NULL);
         binder.addValueChangeListener(valueChangeEvent -> changed = true);
-    }
-
-
-    @Override
-    protected void onSave(InstrumentViewModel bean) {
-        stocksService.save(InstrumentViewModel.toEntity(bean));
-        String text = "Позиция \"" + bean.getName() + "\" успешно сохранена!";
-        Notify.info(text);
     }
 
     @Override
@@ -105,6 +99,13 @@ public class InstrumentEditor extends CommonPopupEditor<InstrumentViewModel> {
         broker.setPreventInvalidInput(true);
         broker.setWidth("100%");
         broker.setItemLabelGenerator(CommonLightModel::getName);
+    }
+
+    @Override
+    protected void onSave(InstrumentViewModel bean) {
+        stocksService.save(InstrumentViewModel.toEntity(bean));
+        String text = "Позиция \"" + bean.getName() + "\" успешно сохранена!";
+        Notify.info(text);
     }
 
     private void loadBrokerComboBoxData() {
