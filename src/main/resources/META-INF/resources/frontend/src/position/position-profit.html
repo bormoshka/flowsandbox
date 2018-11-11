@@ -21,14 +21,15 @@
             }
         </style>
         <div class='price-comparison'>
-            [[position.openPrice]]
+            [[position.open]]
             <template is='dom-if' if='[[position.closed]]'>
-                / <span class$='price-comparison__[[position.profitStatus]]'>[[position.closePrice]] </span>
+                / <span class$='price-comparison__[[position.profitStatus]]'>[[position.close]] </span>
             </template>
             <span class='price-comparison__subtext'>[[position.baseCurrency]]</span>
             <template is='dom-if' if='[[position.closed]]'>
                 <br>
-                <span class$='price-comparison__subtext price-comparison__[[position.profitStatus]]'>[[position.profit]] [[position.baseCurrency]]
+                <span class$='price-comparison__subtext price-comparison__[[position.profitStatus]]'>
+                    [[position.profit]] [[position.baseCurrency]]
             [ <span class$='price-comparison__[[position.profitStatus]]'>[[position.profitPercents]]%</span> ]
             </span>
             </template>

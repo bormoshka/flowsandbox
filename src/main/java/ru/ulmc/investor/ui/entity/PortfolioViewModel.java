@@ -18,6 +18,7 @@ import static java.lang.ThreadLocal.withInitial;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 import static org.hibernate.Hibernate.isInitialized;
+import static ru.ulmc.investor.ui.util.Format.BIG_DECIMAL_SHORT;
 
 @Getter
 @Setter
@@ -25,11 +26,6 @@ import static org.hibernate.Hibernate.isInitialized;
 @NoArgsConstructor
 @EqualsAndHashCode(of = "id")
 public class PortfolioViewModel implements Serializable {
-    private static final ThreadLocal<NumberFormat> numFormat = withInitial(() -> {
-        DecimalFormat decimalFormat = new DecimalFormat("0.00");
-        decimalFormat.setParseBigDecimal(true);
-        return decimalFormat;
-    });
     private Long id;
     private String name;
     private List<PositionViewModel> positions;
@@ -65,7 +61,7 @@ public class PortfolioViewModel implements Serializable {
     }
 
     public String getTotalInvestedValue() {
-        return numFormat.get().format(getPositions().stream()
+        return BIG_DECIMAL_SHORT.get().format(getPositions().stream()
                 .mapToDouble(bp -> bp.getOpenPrice()
                         .multiply(bp.getCurrencyOpenPrice())
                         .multiply(BigDecimal.valueOf(bp.getQuantity()))

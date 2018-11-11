@@ -1,0 +1,42 @@
+<link rel="import" href="../../bower_components/vaadin-lumo-styles/color.html">
+<link rel="import" href="../../bower_components/vaadin-lumo-styles/typography.html">
+
+<dom-module id="position-sum">
+    <template>
+        <style>
+            .price-comparison__profit {
+                color: var(--lumo-success-color);
+            }
+
+            .price-comparison__loss {
+                color: var(--lumo-error-color);
+            }
+        </style>
+        <div>
+            <template is="dom-repeat" items="[[perCurrencyResults]]">
+                <div>{{item.currency}}: {{item.totalInvested}}
+                    <template is='dom-if' if='[[item.hasAnyClosedPositions]]'>
+                        <template is='dom-if' if='[[!item.loss]]'>
+                            <span class="price-comparison__profit">(прибыль: +{{item.totalProfit}})</span>
+                        </template>
+                        <template is='dom-if' if='[[item.loss]]'>
+                            <span class="price-comparison__loss">(убыток: {{item.totalProfit}})</span>
+                        </template>
+                        </span>
+                    </template>
+                </div>
+            </template>
+            <!-- <span>Итого: {{baseCurrencyResult}} {{baseCurrency}}</span>-->
+        </div>
+    </template>
+
+    <script>
+        class PositionSum extends Polymer.Element {
+            static get is() {
+                return 'position-sum';
+            }
+        }
+
+        window.customElements.define(PositionSum.is, PositionSum);
+    </script>
+</dom-module>

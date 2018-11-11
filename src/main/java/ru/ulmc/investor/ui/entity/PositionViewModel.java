@@ -1,5 +1,6 @@
 package ru.ulmc.investor.ui.entity;
 
+import com.vaadin.flow.templatemodel.TemplateModel;
 import lombok.*;
 import ru.ulmc.investor.data.entity.Position;
 
@@ -8,16 +9,16 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import static java.math.BigDecimal.valueOf;
+import static ru.ulmc.investor.ui.entity.ProfitStatus.*;
+
 @Getter
 @Setter
 @ToString
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder(toBuilder = true)
 @EqualsAndHashCode(of = {"id", "instrument"})
 public class PositionViewModel {
     private static final DateTimeFormatter df = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
-
     private Long id;
     private String comment;
     private PortfolioLightModel portfolio;
@@ -28,10 +29,16 @@ public class PositionViewModel {
     private BigDecimal openPrice;
     private BigDecimal currencyOpenPrice;
     private BigDecimal closePrice;
-
     private BigDecimal currencyClosePrice;
-
     private boolean closed;
+
+    public PositionTotal getTotals() {
+        return new PositionTotal(this);
+    }
+
+    public PositionPrice getPrices() {
+        return new PositionPrice(this);
+    }
 
     public static PositionViewModel of(Position position) {
         return PositionViewModel.builder()
@@ -71,15 +78,6 @@ public class PositionViewModel {
         return closed ? "closed" : "open";
     }
 
-    public String getProfitStatus() {
-        if (closed) {
-            BigDecimal openPrice = getOpenPrice();
-            return openPrice.compareTo(getClosePrice()) > 0 ? "loss" : "profit";
-        } else {
-            return "still-open";
-        }
-    }
-
     public String getBroker() {
         return instrument.getBroker().getName();
     }
@@ -96,22 +94,8 @@ public class PositionViewModel {
         return instrument.getName();
     }
 
-    public BigDecimal getProfitPercents() {
-        if (!closed) {
-            return BigDecimal.ZERO;
-        }
-        BigDecimal size = BigDecimal.valueOf(quantity);
-        return getProfit().multiply(BigDecimal.valueOf(100))
-                .divide(openPrice.multiply(size), 2, BigDecimal.ROUND_HALF_UP);
-    }
-
-    public BigDecimal getProfit() {
-        if (!closed) {
-            return BigDecimal.ZERO;
-        }
-        BigDecimal size = BigDecimal.valueOf(quantity);
-
-        return closePrice.subtract(openPrice).multiply(size);
+    public BigDecimal getInvestedSummary() {
+        return openPrice.multiply(valueOf(quantity));
     }
 
     public String getOpenDateFormatted() {
@@ -146,5 +130,79 @@ public class PositionViewModel {
             return days + " д.";
         }
 
+    }
+
+    @NoArgsConstructor
+    public static class PositionTotal extends PositionPrice {
+        public PositionTotal(PositionViewModel model) {
+            super(model);
+        }
+
+        @Override
+        public BigDecimal getOpen() {
+            return model.getOpenPrice().multiply(getSize());
+        }
+
+        @Override
+        public BigDecimal getClose() {
+            if (model.getClosePrice() == null) {
+                return null;
+            }
+            return model.getClosePrice().multiply(getSize());
+        }
+
+    }
+
+    @NoArgsConstructor
+    public static class PositionPrice implements TemplateModel {
+        PositionViewModel model;
+
+        public PositionPrice(PositionViewModel model) {
+            this.model = model;
+        }
+
+        public String getBaseCurrency() {
+            return model.getBaseCurrency();
+        }
+
+        public boolean isClosed() {
+            return model.isClosed();
+        }
+
+        public BigDecimal getOpen() {
+            return model.getOpenPrice();
+        }
+
+        public BigDecimal getClose() {
+            return model.getClosePrice();
+        }
+
+        public BigDecimal getProfitPercents() {
+            if (!isClosed()) {
+                return BigDecimal.ZERO;
+            }
+            return getProfit().multiply(valueOf(100))
+                    .divide(this.getOpen().multiply(getSize()), 2, BigDecimal.ROUND_HALF_UP);
+        }
+
+        BigDecimal getSize() {
+            return valueOf(model.quantity);
+        }
+
+        public BigDecimal getProfit() {
+            if (!isClosed()) {
+                return BigDecimal.ZERO;
+            }
+            return getClose().subtract(getOpen()).multiply(getSize());
+        }
+
+        public String getProfitStatus() {
+            if (isClosed()) {
+                BigDecimal openPrice = getOpen();
+                return openPrice.compareTo(getClose()) > 0 ? LOSS.getDesc() : PROFIT.getDesc();
+            } else {
+                return NEUTRAL.getDesc();
+            }
+        }
     }
 }

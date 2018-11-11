@@ -4,6 +4,8 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dependency.HtmlImport;
+import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.dialog.GeneratedVaadinDialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -15,6 +17,7 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import ru.ulmc.investor.service.StocksService;
 import ru.ulmc.investor.service.UserService;
@@ -56,6 +59,7 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
     private Button addBtn;
     private ComboBox<PortfolioLightModel> portfolioComboBox;
     private ComboBox<PositionStatusFilter> statusFilter;
+    private PositionSumComponent sumResultComponent;
 
     @Autowired
     public PositionsPage(UserService userService,
@@ -68,12 +72,16 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
         this.fullPositionEditor = fullPositionEditor;
         this.openPositionEditor = openPositionEditor;
         this.closedPositionEditor = closedPositionEditor;
-        openPositionEditor.addOpenedChangeListener(event -> {
-            if (!event.isOpened()) {
-                onFilterStateChange(event);
-            }
-        });
+        this.openPositionEditor.addOpenedChangeListener(this::onEditorStateChange);
+        this.fullPositionEditor.addOpenedChangeListener(this::onEditorStateChange);
+        this.closedPositionEditor.addOpenedChangeListener(this::onEditorStateChange);
         init();
+    }
+
+    private void onEditorStateChange(GeneratedVaadinDialog.OpenedChangeEvent<Dialog> event) {
+        if (!event.isOpened()) {
+            onFilterStateChange(event);
+        }
     }
 
     private void onFilterStateChange(Object someEvent) {
@@ -83,7 +91,12 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
         addBtn.setEnabled(defined);
 
         if (defined) {
-            RouterUtil.navigateTo(this.getClass(), String.valueOf(value.getId()), statusFilter.getValue().name());
+            PositionStatusFilter status = statusFilter.getValue();
+            String name = null;
+            if (status != null) {
+                name = status.name();
+            }
+            RouterUtil.navigateTo(this.getClass(), String.valueOf(value.getId()), name);
         }
     }
 
@@ -91,17 +104,18 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
         initGrid();
         initControlLayout();
         initMainLayout();
+        loadPortfolioData();
     }
 
     private void applyFilters(long portfolioId) {
         List<PositionViewModel> positions = applyFilterByStatus(portfolioId);
         grid.setItems(positions);
+        sumResultComponent.update(positions);
     }
 
     private void initGrid() {
         grid = new Grid<>();
         grid.setSizeFull();
-        //todo: оформить красиво. не зря же на flow
         grid.addColumn(getNameRenderer())
                 .setFlexGrow(10)
                 .setHeader("Название");
@@ -114,10 +128,15 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
         grid.addColumn(getPriceRenderer())
                 .setFlexGrow(5)
                 .setHeader("Цена");
+        val sumCol = grid.addColumn(getSumRenderer())
+                .setFlexGrow(5)
+                .setHeader("Сумма");
         grid.addComponentColumn(this::createRowControls)
                 .setFlexGrow(0)
                 .setWidth("150px")
                 .setHeader("Действия");
+        sumResultComponent = new PositionSumComponent();
+        grid.appendFooterRow().getCell(sumCol).setComponent(sumResultComponent);
     }
 
     private void initControlLayout() {
@@ -125,7 +144,6 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
         initPortfolioFilter();
         initAddButton();
         initControlsLayout();
-        loadPortfolioData();
     }
 
     private void initMainLayout() {
@@ -159,8 +177,20 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
     }
 
     private Renderer<PositionViewModel> getPriceRenderer() {
-        return TemplateRenderer.<PositionViewModel>of("<position-profit position='[[item.position]]'></position-profit>")
-                .withProperty("position", p -> p);
+        return TemplateRenderer.<PositionViewModel>of("<position-profit position='[[item.prices]]'></position-profit>")
+                .withProperty("prices", PositionViewModel::getPrices);
+    }
+
+    private Renderer<PositionViewModel> getSumRenderer() {
+        return TemplateRenderer.<PositionViewModel>of("<position-profit position='[[item.total]]'></position-profit>")
+                .withProperty("total", PositionViewModel::getTotals);
+    }
+
+    private void defaultSelect() {
+        if (!portfolioComboBox.getFilteredItems().isEmpty()) {
+            portfolioComboBox.setValue(portfolioComboBox.getFilteredItems().get(0));
+        }
+        statusFilter.setValue(PositionStatusFilter.OPEN);
     }
 
     private void initStatusFilter() {
@@ -170,7 +200,6 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
         statusFilter.setEnabled(false);
         statusFilter.setItemLabelGenerator(PositionStatusFilter::getDescription);
         statusFilter.setItems(PositionStatusFilter.values());
-        statusFilter.setValue(PositionStatusFilter.OPEN);
         statusFilter.addValueChangeListener(this::onFilterStateChange);
     }
 
@@ -202,15 +231,14 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
     private void loadPortfolioData() {
         List<PortfolioLightModel> allPortfoliosInfo = stocksService.getAllPortfoliosInfo();
         portfolioComboBox.setItems(allPortfoliosInfo);
-        if (!allPortfoliosInfo.isEmpty()) {
-            portfolioComboBox.setValue(allPortfoliosInfo.get(0));
-        }
+        portfolioComboBox.setFilteredItems(allPortfoliosInfo);
     }
 
     @Override
     public void onEnter(BeforeEnterEvent beforeEnterEvent) {
-        //вот тут начинаем заполнять страницу данными
-
+        if(portfolioComboBox.getValue() == null || statusFilter.getValue() == null) {
+            defaultSelect();
+        }
     }
 
     private Component createRowControls(PositionViewModel pvm) {
@@ -243,6 +271,8 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
             if (params.size() == 2) {
                 statusFilter.setValue(PositionStatusFilter.valueOf(params.get(1)));
                 applyFilters(Long.valueOf(params.get(0)));
+            } else {
+                defaultSelect();
             }
         }
     }
