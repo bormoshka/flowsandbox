@@ -1,11 +1,15 @@
 package ru.ulmc.investor.ui.view.information;
 
+import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dependency.HtmlImport;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.dialog.GeneratedVaadinDialog;
+import com.vaadin.flow.component.grid.FooterRow;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -19,6 +23,10 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import ru.ulmc.investor.data.entity.LastPrice;
+import ru.ulmc.investor.service.IEXMarketService;
+import ru.ulmc.investor.service.MarketService;
 import ru.ulmc.investor.service.StocksService;
 import ru.ulmc.investor.service.UserService;
 import ru.ulmc.investor.ui.MainLayout;
@@ -26,7 +34,6 @@ import ru.ulmc.investor.ui.entity.PortfolioLightModel;
 import ru.ulmc.investor.ui.entity.PositionViewModel;
 import ru.ulmc.investor.ui.util.PageParams;
 import ru.ulmc.investor.ui.util.PositionStatusFilter;
-import ru.ulmc.investor.ui.util.RouterUtil;
 import ru.ulmc.investor.ui.util.TopLevelPage;
 import ru.ulmc.investor.ui.view.CommonPage;
 import ru.ulmc.investor.ui.view.information.editor.ClosedPositionEditor;
@@ -35,8 +42,12 @@ import ru.ulmc.investor.ui.view.information.editor.OpenPositionEditor;
 import ru.ulmc.investor.user.Permission;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.Collections.emptyList;
+import static ru.ulmc.investor.ui.util.RouterUtil.navigateTo;
 import static ru.ulmc.investor.ui.util.RouterUtil.unescapeParams;
 
 @Slf4j
@@ -50,41 +61,74 @@ import static ru.ulmc.investor.ui.util.RouterUtil.unescapeParams;
 public class PositionsPage extends CommonPage implements HasUrlParameter<String> {
     public static final PageParams PAGE = PageParams.from(Permission.INFORMATION_READ).build();
 
+    private final UI currentUi;
     private final ClosedPositionEditor closedPositionEditor;
     private final FullPositionEditor fullPositionEditor;
+    private final MarketService quoteService;
+    private final Map<String, PositionViewModel> perSymbolPositions = new ConcurrentHashMap<>();
     private StocksService stocksService;
     private OpenPositionEditor openPositionEditor;
     private Grid<PositionViewModel> grid;
     private HorizontalLayout controlsLayout;
-    private Button addBtn;
     private ComboBox<PortfolioLightModel> portfolioComboBox;
     private ComboBox<PositionStatusFilter> statusFilter;
+    private Checkbox enableRefreshCheckbox;
     private PositionSumComponent sumResultComponent;
+    private Button addBtn;
 
     @Autowired
     public PositionsPage(UserService userService,
                          StocksService stocksService,
                          FullPositionEditor fullPositionEditor,
                          OpenPositionEditor openPositionEditor,
-                         ClosedPositionEditor closedPositionEditor) {
+                         ClosedPositionEditor closedPositionEditor,
+                         MarketService quoteService) {
         super(userService, PAGE);
         this.stocksService = stocksService;
         this.fullPositionEditor = fullPositionEditor;
         this.openPositionEditor = openPositionEditor;
         this.closedPositionEditor = closedPositionEditor;
+        this.quoteService = quoteService;
         this.openPositionEditor.addOpenedChangeListener(this::onEditorStateChange);
         this.fullPositionEditor.addOpenedChangeListener(this::onEditorStateChange);
         this.closedPositionEditor.addOpenedChangeListener(this::onEditorStateChange);
         init();
+        currentUi = UI.getCurrent();
     }
 
     private void onEditorStateChange(GeneratedVaadinDialog.OpenedChangeEvent<Dialog> event) {
         if (!event.isOpened()) {
-            onFilterStateChange(event);
+            onFilterStateChange(null);
         }
     }
 
-    private void onFilterStateChange(Object someEvent) {
+    @Scheduled(initialDelay = 1000, fixedRateString = "${ui.positions-page.update-rate}")
+    public void scheduledUpdate() {
+        log.trace("Scheduled task {}", Thread.currentThread().getName());
+        if (enableRefreshCheckbox.getValue()) {
+            currentUi.access(this::setLastPrices);
+        }
+    }
+
+    private void setLastPrices() {
+        log.trace("Updating last prices");
+        findAndUpdateLastPrice();
+    }
+
+    private void findAndUpdateLastPrice() {
+        quoteService.getLastPricesAsync(perSymbolPositions.keySet(), lastPrice ->
+                currentUi.access(() -> updateLastPrice(lastPrice)));
+    }
+
+    private void updateLastPrice(LastPrice lastPrice) {
+        PositionViewModel model = perSymbolPositions.get(lastPrice.getSymbol());
+        model.setMarketPrice(lastPrice.getLastPrice());
+        grid.getDataProvider().refreshItem(model);
+    }
+
+    private void onFilterStateChange(AbstractField.ComponentValueChangeEvent changeEvent) {
+        log.trace("onFilterStateChange {}", changeEvent);
+
         PortfolioLightModel value = portfolioComboBox.getValue();
         boolean defined = value != null;
         statusFilter.setEnabled(defined);
@@ -96,11 +140,14 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
             if (status != null) {
                 name = status.name();
             }
-            RouterUtil.navigateTo(this.getClass(), String.valueOf(value.getId()), name);
+            if (changeEvent == null || changeEvent.isFromClient()) {
+                navigateTo(this.getClass(), String.valueOf(value.getId()), name);
+            }
         }
     }
 
     private void init() {
+        initAutoUpdateCheckbox();
         initGrid();
         initControlLayout();
         initMainLayout();
@@ -109,14 +156,17 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
 
     private void applyFilters(long portfolioId) {
         List<PositionViewModel> positions = applyFilterByStatus(portfolioId);
+        perSymbolPositions.clear();
+        positions.forEach(pos -> perSymbolPositions.put(pos.getStockCode(), pos));
         grid.setItems(positions);
+        findAndUpdateLastPrice();
         sumResultComponent.update(positions);
     }
 
     private void initGrid() {
         grid = new Grid<>();
         grid.setSizeFull();
-        grid.addColumn(getNameRenderer())
+        val nameCol = grid.addColumn(getNameRenderer())
                 .setFlexGrow(10)
                 .setHeader("Название");
         grid.addColumn(getDateRenderer())
@@ -136,7 +186,9 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
                 .setWidth("150px")
                 .setHeader("Действия");
         sumResultComponent = new PositionSumComponent();
-        grid.appendFooterRow().getCell(sumCol).setComponent(sumResultComponent);
+        FooterRow footerRow = grid.appendFooterRow();
+        footerRow.getCell(nameCol).setComponent(enableRefreshCheckbox);
+        footerRow.getCell(sumCol).setComponent(sumResultComponent);
     }
 
     private void initControlLayout() {
@@ -144,6 +196,11 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
         initPortfolioFilter();
         initAddButton();
         initControlsLayout();
+    }
+
+    private void initAutoUpdateCheckbox() {
+        enableRefreshCheckbox = new Checkbox("Автообновление рынка");
+        enableRefreshCheckbox.setValue(true);
     }
 
     private void initMainLayout() {
@@ -236,7 +293,7 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
 
     @Override
     public void onEnter(BeforeEnterEvent beforeEnterEvent) {
-        if(portfolioComboBox.getValue() == null || statusFilter.getValue() == null) {
+        if (portfolioComboBox.getValue() == null && statusFilter.getValue() == null) {
             defaultSelect();
         }
     }
@@ -269,11 +326,19 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
             log.debug("With Parameter {}", s);
             List<String> params = unescapeParams(s);
             if (params.size() == 2) {
+                selectPortfolioFromParam(params).ifPresent(portfolioComboBox::setValue);
                 statusFilter.setValue(PositionStatusFilter.valueOf(params.get(1)));
                 applyFilters(Long.valueOf(params.get(0)));
             } else {
                 defaultSelect();
             }
         }
+    }
+
+    private Optional<PortfolioLightModel> selectPortfolioFromParam(List<String> params) {
+        Long paramId = Long.valueOf(params.get(0));
+        return portfolioComboBox.getFilteredItems().stream()
+                .filter(s -> s.getId() == paramId)
+                .findFirst();
     }
 }

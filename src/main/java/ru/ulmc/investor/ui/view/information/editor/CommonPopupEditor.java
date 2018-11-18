@@ -10,8 +10,8 @@ import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.router.RouterLayout;
 
 public abstract class CommonPopupEditor<T> extends Dialog implements RouterLayout {
-    Button saveBtn;
-    Button cancelBtn;
+    Button saveBtn = new Button("Сохранить");
+    Button cancelBtn = new Button("Закрыть");
     BeanValidationBinder<T> binder;
     boolean changed = false;
     boolean initialized = false;
@@ -50,8 +50,6 @@ public abstract class CommonPopupEditor<T> extends Dialog implements RouterLayou
     protected abstract void initFields();
 
     protected HorizontalLayout getControls() {
-        saveBtn = new Button("Сохранить");
-
         saveBtn.getElement().setAttribute("theme", "primary");
         saveBtn.addClickListener(buttonClickEvent -> {
             if (binder.isValid()) {
@@ -61,7 +59,7 @@ public abstract class CommonPopupEditor<T> extends Dialog implements RouterLayou
                 tryToCloseDialog(buttonClickEvent);
             }
         });
-        cancelBtn = new Button("Закрыть");
+
         cancelBtn.addClickListener(this::tryToCloseDialog);
         HorizontalLayout hl = new HorizontalLayout(saveBtn, cancelBtn);
         hl.setSizeFull();

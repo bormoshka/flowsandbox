@@ -4,11 +4,14 @@
 <dom-module id="position-profit">
     <template>
         <style>
-            .price-comparison .price-comparison__profit {
+            .price-comparison__closed-true {
+
+            }
+            .price-comparison .price-comparison__profit-true {
                 color: var(--lumo-success-color);
             }
 
-            .price-comparison .price-comparison__loss {
+            .price-comparison .price-comparison__profit-false {
                 color: var(--lumo-error-color);
             }
 
@@ -19,19 +22,42 @@
             .price-comparison .price-comparison__subtext {
                 /*color: var(--lumo-contrast-60pct);*/
             }
+
+            .price-comparison__icon {
+                width: 12px;
+                height: 12px;
+            }
         </style>
-        <div class='price-comparison'>
+        <div class$='price-comparison price-comparison__closed-[[position.closed]]'>
+           <template is='dom-if' if='[[position.closed]]'>
+                <iron-icon class="price-comparison__icon" icon="vaadin:minus-circle"></iron-icon>
+            </template>
             [[position.open]]
             <template is='dom-if' if='[[position.closed]]'>
-                / <span class$='price-comparison__[[position.profitStatus]]'>[[position.close]] </span>
+                / <span class$='price-comparison__profit-[[position.profitable]]'>[[position.close]] </span>
+            </template>
+            <template is='dom-if' if='[[position.openWithMarket]]' restamp>
+                / <span class$='price-comparison__profit-[[position.profitable]]'>[[position.market]] </span>
             </template>
             <span class='price-comparison__subtext'>[[position.baseCurrency]]</span>
             <template is='dom-if' if='[[position.closed]]'>
                 <br>
-                <span class$='price-comparison__subtext price-comparison__[[position.profitStatus]]'>
+                <span class$='price-comparison__subtext price-comparison__profit-[[position.profitable]]'>
                     [[position.profit]] [[position.baseCurrency]]
-            [ <span class$='price-comparison__[[position.profitStatus]]'>[[position.profitPercents]]%</span> ]
+            [ <span class$='price-comparison__profit-[[position.profitable]]'>[[position.profitPercents]]%</span> ]
+                </span>
+            </template>
+
+            <template is='dom-if' if='[[position.openWithMarket]]' restamp>
+                <br>
+                <span class$='price-comparison__subtext price-comparison__profit-[[position.profitable]]'>
+                    [[position.profit]] [[position.baseCurrency]]
+            [ <span class$='price-comparison__profit-[[position.profitable]]'>[[position.profitPercents]]%</span> ]
+                    <iron-icon class="price-comparison__icon"
+                               icon$="vaadin:trendind-[[position.trending]]"></iron-icon>
             </span>
+
+
             </template>
         </div>
     </template>

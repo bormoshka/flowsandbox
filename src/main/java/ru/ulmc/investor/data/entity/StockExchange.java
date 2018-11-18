@@ -8,7 +8,8 @@ import lombok.Getter;
 public enum StockExchange {
     NASDAQ("NASDAQ"),
     NYSE("NYSE"),
-    MCX("Моссковская биржа");
+    MCX("Московская биржа"),
+    UNKNOWN("Не известно");
 
     private final String name;
 }

@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum InstrumentType {
+public enum SymbolType {
     IRRELEVANT("Не важно"),
     STOCK("Акции"),
     SIMPLE_BONDS("Простые облигации"),

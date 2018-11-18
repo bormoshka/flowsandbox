@@ -6,7 +6,7 @@ import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.data.binder.Validator;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import ru.ulmc.investor.ui.entity.InstrumentViewModel;
+import ru.ulmc.investor.ui.entity.SymbolViewModel;
 import ru.ulmc.investor.ui.entity.PositionViewModel;
 
 import java.math.BigDecimal;
@@ -82,18 +82,18 @@ class PositionBinder extends BeanValidationBinder<PositionViewModel> {
         return String.valueOf(position.getQuantity());
     }
 
-    private static void setStock(PositionViewModel position, InstrumentViewModel stock) {
+    private static void setStock(PositionViewModel position, SymbolViewModel stock) {
         if (stock == null) {
             return;
         }
-        position.setInstrument(stock);
+        position.setSymbol(stock);
     }
 
-    private static InstrumentViewModel getStock(PositionViewModel position) {
-        if (position.getInstrument().getId() == null) {
+    private static SymbolViewModel getStock(PositionViewModel position) {
+        if (position.getSymbol().getId() == null) {
             return null;
         }
-        return position.getInstrument();
+        return position.getSymbol();
     }
 
     @SneakyThrows

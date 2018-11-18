@@ -12,27 +12,27 @@ import java.io.Serializable;
 @AllArgsConstructor
 @EqualsAndHashCode
 @Builder(toBuilder = true)
-public class InstrumentViewModel implements Serializable {
+public class SymbolViewModel implements Serializable {
     private Long id;
     private String name;
     private String code;
     private StockExchange stockExchange;
-    private InstrumentType type;
+    private SymbolType type;
     private Currency currency;
     private Currency closeCurrency;
 
     private BrokerLightModel broker;
 
-    public static InstrumentViewModel of(Instrument stock) {
+    public static SymbolViewModel of(Symbol stock) {
         Broker brokerEntity = stock.getBroker();
         BrokerLightModel broker = null;
         if(brokerEntity != null) {
              broker = BrokerLightModel.of(brokerEntity);
         }
-        return InstrumentViewModel.builder()
+        return SymbolViewModel.builder()
                 .id(stock.getId())
                 .name(stock.getName())
-                .code(stock.getCode())
+                .code(stock.getSymbol())
                 .type(stock.getType())
                 .stockExchange(stock.getStockExchange())
                 .currency(stock.getCurrency())
@@ -40,12 +40,12 @@ public class InstrumentViewModel implements Serializable {
                 .broker(broker)
                 .build();
     }
-    public static Instrument toEntity(InstrumentViewModel model) {
+    public static Symbol toEntity(SymbolViewModel model) {
         Currency closeCurrency = model.getCloseCurrency();
-        return Instrument.builder()
+        return Symbol.builder()
                 .id(model.getId())
                 .name(model.getName())
-                .code(model.getCode())
+                .symbol(model.getCode())
                 .type(model.getType())
                 .stockExchange(model.getStockExchange())
                 .currency(model.getCurrency())

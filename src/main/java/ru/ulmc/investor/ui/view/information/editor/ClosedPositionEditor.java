@@ -48,7 +48,7 @@ public class ClosedPositionEditor extends FullPositionEditor {
     @Override
     protected void onSave(PositionViewModel bean) {
         bean.setClosed(true);
-        String text = "Позиция \"" + bean.getInstrument().getName();
+        String text = "Позиция \"" + bean.getSymbol().getName();
         if (bean.getQuantity() == originalModel.getQuantity()) {
             text += "\" успешно закрыта!";
             bean.setId(originalModel.getId());

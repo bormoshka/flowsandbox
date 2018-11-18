@@ -1,0 +1,32 @@
+<link rel="import" href="../../bower_components/vaadin-lumo-styles/color.html">
+<link rel="import" href="../../bower_components/vaadin-lumo-styles/typography.html">
+
+<dom-module id="company-info">
+    <template>
+        <style>
+            .company-info__title {
+                color: var(--lumo-contrast-70pct);
+            }
+            .company-info__line {
+                max-width: 600px;
+            }
+        </style>
+        <div>
+            <div class='company-info__line'><span class="company-info__title">Название: </span>[[name]]</div>
+            <div class='company-info__line'><span class="company-info__title">CEO: </span>[[ceo]]</div>
+            <div class='company-info__line'><span class="company-info__title">Описание: </span>[[description]]</div>
+            <div class='company-info__line'><span class="company-info__title">Сектор: </span>[[sector]]
+                <span class="company-info__title">Индустрия: </span>[[industry]]</div>
+        </div>
+    </template>
+
+    <script>
+        class Company extends Polymer.Element {
+            static get is() {
+                return 'company-info';
+            }
+        }
+
+        window.customElements.define(Company.is, Company);
+    </script>
+</dom-module>

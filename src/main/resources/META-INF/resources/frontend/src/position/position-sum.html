@@ -4,11 +4,11 @@
 <dom-module id="position-sum">
     <template>
         <style>
-            .price-comparison__profit {
+            .price-comparison__profit-true {
                 color: var(--lumo-success-color);
             }
 
-            .price-comparison__loss {
+            .price-comparison__profit-false {
                 color: var(--lumo-error-color);
             }
         </style>
@@ -17,10 +17,10 @@
                 <div>{{item.currency}}: {{item.totalInvested}}
                     <template is='dom-if' if='[[item.hasAnyClosedPositions]]'>
                         <template is='dom-if' if='[[!item.loss]]'>
-                            <span class="price-comparison__profit">(прибыль: +{{item.totalProfit}})</span>
+                            <br><span class$="price-comparison__profit-[[position.profitable]]">(прибыль: +{{item.totalProfit}})</span>
                         </template>
                         <template is='dom-if' if='[[item.loss]]'>
-                            <span class="price-comparison__loss">(убыток: {{item.totalProfit}})</span>
+                            <br><span class="price-comparison__profit-[[position.profitable]]">(убыток: {{item.totalProfit}})</span>
                         </template>
                         </span>
                     </template>

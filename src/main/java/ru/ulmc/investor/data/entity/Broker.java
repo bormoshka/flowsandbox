@@ -11,7 +11,7 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
-@ToString(exclude = "instruments")
+@ToString(exclude = "symbols")
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
 @EqualsAndHashCode(of = "id")
@@ -25,7 +25,7 @@ public class Broker {
     private String name;
 
     @OneToMany(mappedBy = "broker", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<Instrument> instruments;
+    private List<Symbol> symbols;
 
     //todo: комиссии и т.п.
 

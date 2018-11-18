@@ -2,13 +2,17 @@ package ru.ulmc.investor.ui.entity;
 
 import com.vaadin.flow.templatemodel.TemplateModel;
 import lombok.*;
+import org.apache.commons.lang3.tuple.Pair;
+import ru.ulmc.investor.data.entity.LastPrice;
 import ru.ulmc.investor.data.entity.Position;
 
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
+import static java.math.BigDecimal.ZERO;
 import static java.math.BigDecimal.valueOf;
 import static ru.ulmc.investor.ui.entity.ProfitStatus.*;
 
@@ -16,13 +20,13 @@ import static ru.ulmc.investor.ui.entity.ProfitStatus.*;
 @Setter
 @ToString
 @Builder(toBuilder = true)
-@EqualsAndHashCode(of = {"id", "instrument"})
+@EqualsAndHashCode(of = {"id", "symbol"})
 public class PositionViewModel {
     private static final DateTimeFormatter df = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
     private Long id;
     private String comment;
     private PortfolioLightModel portfolio;
-    private InstrumentViewModel instrument;
+    private SymbolViewModel symbol;
     private int quantity;
     private LocalDateTime openDate;
     private LocalDateTime closeDate;
@@ -30,14 +34,14 @@ public class PositionViewModel {
     private BigDecimal currencyOpenPrice;
     private BigDecimal closePrice;
     private BigDecimal currencyClosePrice;
+
+    private BigDecimal marketPrice;
     private boolean closed;
 
-    public PositionTotal getTotals() {
-        return new PositionTotal(this);
-    }
-
-    public PositionPrice getPrices() {
-        return new PositionPrice(this);
+    public static PositionViewModel of(Pair<Position, Optional<LastPrice>> positionToLastPrice) {
+        PositionViewModel model = of(positionToLastPrice.getKey());
+        positionToLastPrice.getValue().ifPresent(lp -> model.setMarketPrice(lp.getLastPrice()));
+        return model;
     }
 
     public static PositionViewModel of(Position position) {
@@ -45,7 +49,7 @@ public class PositionViewModel {
                 .id(position.getId())
                 .comment(position.getComment())
                 .portfolio(PortfolioLightModel.of(position.getPortfolio()))
-                .instrument(InstrumentViewModel.of(position.getInstrument()))
+                .symbol(SymbolViewModel.of(position.getSymbol()))
                 .quantity(position.getQuantity())
                 .openDate(position.getOpenDate())
                 .closeDate(position.getCloseDate())
@@ -62,7 +66,7 @@ public class PositionViewModel {
                 .id(position.getId())
                 .comment(position.getComment())
                 .portfolio(PortfolioLightModel.toEntity(position.getPortfolio()))
-                .instrument(InstrumentViewModel.toEntity(position.getInstrument()))
+                .symbol(SymbolViewModel.toEntity(position.getSymbol()))
                 .quantity(position.getQuantity())
                 .openDate(position.getOpenDate())
                 .closeDate(position.getCloseDate())
@@ -74,24 +78,40 @@ public class PositionViewModel {
                 .build();
     }
 
+    public PositionTotal getTotals() {
+        return new PositionTotal(this);
+    }
+
+    public PositionPrice getPrices() {
+        return new PositionPrice(this);
+    }
+
+    public Optional<BigDecimal> getMarketPrice() {
+        return Optional.ofNullable(marketPrice);
+    }
+
+    public void setMarketPrice(BigDecimal marketPrice) {
+        this.marketPrice = marketPrice;
+    }
+
     public String getStatus() {
         return closed ? "closed" : "open";
     }
 
     public String getBroker() {
-        return instrument.getBroker().getName();
+        return symbol.getBroker().getName();
     }
 
     public String getBaseCurrency() {
-        return instrument.getCurrency().name();
+        return symbol.getCurrency().name();
     }
 
     public String getStockCode() {
-        return instrument.getCode();
+        return symbol.getCode();
     }
 
     public String getStockName() {
-        return instrument.getName();
+        return symbol.getName();
     }
 
     public BigDecimal getInvestedSummary() {
@@ -151,6 +171,14 @@ public class PositionViewModel {
             return model.getClosePrice().multiply(getSize());
         }
 
+        @Override
+        public BigDecimal getMarket() {
+            if (isLastPriceInitialized()) {
+                return model.marketPrice.multiply(getSize());
+            }
+            return ZERO;
+        }
+
     }
 
     @NoArgsConstructor
@@ -169,6 +197,14 @@ public class PositionViewModel {
             return model.isClosed();
         }
 
+        public boolean isLastPriceInitialized() {
+            return model.marketPrice != null;
+        }
+
+        public boolean isOpenWithMarket() {
+            return !isClosed() && isLastPriceInitialized();
+        }
+
         public BigDecimal getOpen() {
             return model.getOpenPrice();
         }
@@ -177,12 +213,18 @@ public class PositionViewModel {
             return model.getClosePrice();
         }
 
+        public BigDecimal getMarket() {
+            return model.marketPrice;
+        }
+
         public BigDecimal getProfitPercents() {
-            if (!isClosed()) {
-                return BigDecimal.ZERO;
+            if (isClosed() || isLastPriceInitialized()) {
+                return getProfit().multiply(valueOf(100))
+                        .divide(this.getOpen().multiply(getSize()), 2, BigDecimal.ROUND_HALF_UP);
+            } else {
+                return ZERO;
             }
-            return getProfit().multiply(valueOf(100))
-                    .divide(this.getOpen().multiply(getSize()), 2, BigDecimal.ROUND_HALF_UP);
+
         }
 
         BigDecimal getSize() {
@@ -190,19 +232,35 @@ public class PositionViewModel {
         }
 
         public BigDecimal getProfit() {
-            if (!isClosed()) {
-                return BigDecimal.ZERO;
+            if (isClosed()) {
+                return getClose().subtract(getOpen())/*.multiply(getSize())*/;
+            } else if (isLastPriceInitialized()) {
+                return getMarket().subtract(getOpen())/*.multiply(getSize())*/;
+            } else {
+                return ZERO;
             }
-            return getClose().subtract(getOpen()).multiply(getSize());
         }
 
-        public String getProfitStatus() {
+        public boolean isProfitable() {
             if (isClosed()) {
-                BigDecimal openPrice = getOpen();
-                return openPrice.compareTo(getClose()) > 0 ? LOSS.getDesc() : PROFIT.getDesc();
+                return getOpen().compareTo(getClose()) < 0;
+            } else if (isLastPriceInitialized()) {
+                return getOpen().compareTo(getMarket()) < 0;
+            } else {
+                return false;
+            }
+        }
+
+        public String getTrending() {
+            return isProfitable() ? "up" : "down";
+        }
+
+       /* public String getProfitStatus() {
+            if (isClosed() || isOpenWithMarket()) {
+                return isProfitable() ? LOSS.getDesc() : PROFIT.getDesc();
             } else {
                 return NEUTRAL.getDesc();
             }
-        }
+        }*/
     }
 }

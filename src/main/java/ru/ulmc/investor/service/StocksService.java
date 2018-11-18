@@ -1,25 +1,22 @@
 package ru.ulmc.investor.service;
 
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.ulmc.investor.data.entity.Broker;
-import ru.ulmc.investor.data.entity.Portfolio;
-import ru.ulmc.investor.data.entity.Position;
-import ru.ulmc.investor.data.entity.Instrument;
-import ru.ulmc.investor.data.repository.BrokerRepository;
-import ru.ulmc.investor.data.repository.PortfolioRepository;
-import ru.ulmc.investor.data.repository.PositionRepository;
-import ru.ulmc.investor.data.repository.StockRepository;
+import ru.ulmc.investor.data.entity.*;
+import ru.ulmc.investor.data.repository.*;
 import ru.ulmc.investor.ui.entity.*;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.Spliterator;
-import java.util.stream.StreamSupport;
 
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.StreamSupport.stream;
 
 @Slf4j
 @Service
@@ -29,34 +26,37 @@ public class StocksService {
     private final PositionRepository positionRepository;
     private final BrokerRepository brokerRepository;
     private final StockRepository stockRepository;
+    private final LastPriceRepository lastPriceRepository;
 
     @Autowired
     public StocksService(PortfolioRepository portfolioRepository,
                          PositionRepository positionRepository,
                          BrokerRepository brokerRepository,
-                         StockRepository stockRepository) {
+                         StockRepository stockRepository,
+                         LastPriceRepository lastPriceRepository) {
         this.portfolioRepository = portfolioRepository;
         this.positionRepository = positionRepository;
         this.brokerRepository = brokerRepository;
         this.stockRepository = stockRepository;
+        this.lastPriceRepository = lastPriceRepository;
     }
 
-    public List<InstrumentViewModel> getStockPositions() {
-        Spliterator<Instrument> spliterator = stockRepository.findAll().spliterator();
-        return StreamSupport.stream(spliterator, false)
-                .map(InstrumentViewModel::of)
+    public List<SymbolViewModel> getStockPositions() {
+        Spliterator<Symbol> spliterator = stockRepository.findAll().spliterator();
+        return stream(spliterator, false)
+                .map(SymbolViewModel::of)
                 .collect(toList());
     }
 
-    public List<InstrumentViewModel> getStockPositionsByBrokerId(long brokerId) {
+    public List<SymbolViewModel> getStockPositionsByBrokerId(long brokerId) {
         return stockRepository.findAllByBroker_Id(brokerId).stream()
-                .map(InstrumentViewModel::of)
+                .map(SymbolViewModel::of)
                 .collect(toList());
     }
 
     public List<BrokerLightModel> getBrokers() {
         Spliterator<Broker> spliterator = brokerRepository.findAll().spliterator();
-        return StreamSupport.stream(spliterator, false)
+        return stream(spliterator, false)
                 .map(BrokerLightModel::of)
                 .collect(toList());
     }
@@ -67,7 +67,7 @@ public class StocksService {
 
     public List<PortfolioViewModel> getAllPortfolios() {
         Spliterator<Portfolio> spliterator = portfolioRepository.findAll().spliterator();
-        List<PortfolioViewModel> portfolioList = StreamSupport.stream(spliterator, false)
+        List<PortfolioViewModel> portfolioList = stream(spliterator, false)
                 .map(PortfolioViewModel::of)
                 .collect(toList());
         log.debug("Getting all portfolios, found {}", portfolioList.size());
@@ -76,7 +76,7 @@ public class StocksService {
 
     public List<PortfolioLightModel> getAllPortfoliosInfo() {
         Spliterator<Portfolio> spliterator = portfolioRepository.findAll().spliterator();
-        List<PortfolioLightModel> portfolioList = StreamSupport.stream(spliterator, false)
+        List<PortfolioLightModel> portfolioList = stream(spliterator, false)
                 .map(PortfolioLightModel::of)
                 .collect(toList());
         log.debug("Getting all portfolios, found {}", portfolioList.size());
@@ -84,15 +84,15 @@ public class StocksService {
     }
 
     public List<PositionViewModel> getAllOpenPositions(long portfolioId) {
-        return toPositionViewModel(positionRepository.findAllByClosedFalseAndPortfolio_Id(portfolioId));
+        return toPositionViewModelAlt(positionRepository.findAllByClosedFalseAndPortfolio_Id(portfolioId));
     }
 
     public List<PositionViewModel> getClosedPositions(long portfolioId) {
-        return toPositionViewModel(positionRepository.findAllByClosedTrueAndPortfolio_Id(portfolioId));
+        return toPositionViewModelAlt(positionRepository.findAllByClosedTrueAndPortfolio_Id(portfolioId));
     }
 
     public List<PositionViewModel> getAllPositions(long portfolioId) {
-        return toPositionViewModel(positionRepository.findAllByPortfolio_Id(portfolioId));
+        return toPositionViewModelAlt(positionRepository.findAllByPortfolio_Id(portfolioId));
     }
 
     public void removePortfolio(long portfolioId) {
@@ -118,13 +118,13 @@ public class StocksService {
     public void closeFractionally(Position open, Position closed) {
         log.debug("Trying to close position from open {} to closed {}", open, closed);
         Optional<Portfolio> portfolio = portfolioRepository.findById(open.getPortfolio().getId());
-        Optional<Instrument> stock = stockRepository.findById(open.getInstrument().getId());
+        Optional<Symbol> stock = stockRepository.findById(open.getSymbol().getId());
 
         if (portfolio.isPresent() && stock.isPresent()) {
             open.setPortfolio(portfolio.get());
-            open.setInstrument(stock.get());
+            open.setSymbol(stock.get());
             closed.setPortfolio(portfolio.get());
-            closed.setInstrument(stock.get());
+            closed.setSymbol(stock.get());
             open.setQuantity(open.getQuantity() - closed.getQuantity());
             positionRepository.save(open);
             positionRepository.save(closed);
@@ -134,16 +134,16 @@ public class StocksService {
     public Position save(Position model) {
         log.debug("Trying to save position from model {}", model);
         Optional<Portfolio> portfolio = portfolioRepository.findById(model.getPortfolio().getId());
-        Optional<Instrument> stock = stockRepository.findById(model.getInstrument().getId());
+        Optional<Symbol> stock = stockRepository.findById(model.getSymbol().getId());
         if (portfolio.isPresent() && stock.isPresent()) {
             model.setPortfolio(portfolio.get());
-            model.setInstrument(stock.get());
+            model.setSymbol(stock.get());
             return positionRepository.save(model);
         }
         return null;
     }
 
-    public Instrument save(Instrument model) {
+    public Symbol save(Symbol model) {
         log.debug("Trying to save position from model {}", model);
         Optional<Broker> byId = brokerRepository.findById(model.getBroker().getId());
         if (byId.isPresent()) {
@@ -158,7 +158,27 @@ public class StocksService {
         return brokerRepository.save(model);
     }
 
-    private List<PositionViewModel> toPositionViewModel(List<Position> models) {
-        return models.stream().map(PositionViewModel::of).collect(toList());
+    public Optional<LastPrice> findLastPrice(String stockCode) {
+        return ofNullable(lastPriceRepository.findFirstBySymbolOrderByDateTime(stockCode));
     }
+
+    private List<PositionViewModel> toPositionViewModel(
+            List<Position> models) { // todo: не понял пока какой способ лучше. Удалить лишний
+        val data = models.stream().map(PositionViewModel::of).collect(toList());
+        data.forEach(this::setupLastPriceFromCache);
+        return data;
+    }
+
+    private void setupLastPriceFromCache(PositionViewModel model) {
+        Optional<LastPrice> optionalPrice = findLastPrice(model.getStockCode());
+        optionalPrice.ifPresent(lastPrice -> model.setMarketPrice(lastPrice.getLastPrice()));
+    }
+
+    private List<PositionViewModel> toPositionViewModelAlt(List<Position> models) {
+        return models.stream()
+                .map(position -> Pair.of(position, findLastPrice(position.getSymbol().getSymbol())))
+                .map(PositionViewModel::of)
+                .collect(toList());
+    }
+
 }

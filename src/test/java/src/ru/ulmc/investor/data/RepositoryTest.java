@@ -16,7 +16,7 @@ import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import ru.ulmc.investor.Application;
 import ru.ulmc.investor.data.entity.*;
-import ru.ulmc.investor.data.entity.Instrument;
+import ru.ulmc.investor.data.entity.Symbol;
 import ru.ulmc.investor.data.repository.PortfolioRepository;
 import ru.ulmc.investor.data.repository.PositionRepository;
 import ru.ulmc.investor.data.repository.StockRepository;
@@ -56,24 +56,24 @@ public class RepositoryTest {
         portfolioRepository.findAll().forEach(portfolioRepository::delete);
         Portfolio portfolio = stocksService.save(getPortfolio());
         Broker broker = stocksService.save(getBroker("Сбербанк"));
-        Instrument instrument = stocksService.save(getStock(broker));
+        Symbol symbol = stocksService.save(getStock(broker));
         long firstPortfolioId = portfolio.getId();
-        stocksService.save(getBasePosition(portfolio, instrument));
-        stocksService.save(getBasePosition(portfolio, instrument));
-        stocksService.save(getBasePosition(portfolio, instrument));
-        stocksService.save(getBasePosition(portfolio, instrument));
+        stocksService.save(getBasePosition(portfolio, symbol));
+        stocksService.save(getBasePosition(portfolio, symbol));
+        stocksService.save(getBasePosition(portfolio, symbol));
+        stocksService.save(getBasePosition(portfolio, symbol));
 
         portfolio = stocksService.save(getPortfolio());
-        stocksService.save(getBasePosition(portfolio, instrument));
-        stocksService.save(getBasePosition(portfolio, instrument));
+        stocksService.save(getBasePosition(portfolio, symbol));
+        stocksService.save(getBasePosition(portfolio, symbol));
 
         ArrayList<Position> list = new ArrayList<>(positionRepository.findAllByPortfolio_Id(firstPortfolioId));
         assertThat(list.size()).isEqualTo(4);
     }
 
-    static Position getBasePosition(Portfolio portfolio, Instrument instrument) {
+    static Position getBasePosition(Portfolio portfolio, Symbol symbol) {
         return Position.builder()
-                .instrument(instrument)
+                .symbol(symbol)
                 .closed(false)
                 .quantity(10)
                 .openDate(LocalDateTime.now())
@@ -94,11 +94,11 @@ public class RepositoryTest {
         return Broker.builder().name(name).build();
     }
 
-    static Instrument getStock(Broker broker, String name, String code) {
-        return Instrument.builder()
+    static Symbol getStock(Broker broker, String name, String code) {
+        return Symbol.builder()
                 .name(name)
-                .code(code)
-                .type(InstrumentType.STOCK)
+                .symbol(code)
+                .type(SymbolType.STOCK)
                 .stockExchange(StockExchange.NASDAQ)
                 .currency(Currency.RUB)
                 .closeCurrency(Currency.RUB)
@@ -106,7 +106,7 @@ public class RepositoryTest {
                 .build();
     }
 
-    static Instrument getStock(Broker broker) {
+    static Symbol getStock(Broker broker) {
         return getStock(broker, "Google", "GOOG");
     }
 }

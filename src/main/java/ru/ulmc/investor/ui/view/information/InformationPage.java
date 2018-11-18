@@ -14,6 +14,7 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import ru.ulmc.investor.data.entity.Broker;
 import ru.ulmc.investor.service.StocksService;
@@ -21,13 +22,13 @@ import ru.ulmc.investor.service.UserService;
 import ru.ulmc.investor.ui.MainLayout;
 import ru.ulmc.investor.ui.component.ConfirmDialog;
 import ru.ulmc.investor.ui.entity.BrokerLightModel;
-import ru.ulmc.investor.ui.entity.InstrumentViewModel;
+import ru.ulmc.investor.ui.entity.SymbolViewModel;
 import ru.ulmc.investor.ui.util.Notify;
 import ru.ulmc.investor.ui.util.PageParams;
 import ru.ulmc.investor.ui.util.TopLevelPage;
 import ru.ulmc.investor.ui.view.CommonPage;
 import ru.ulmc.investor.ui.view.information.editor.BrokerEditor;
-import ru.ulmc.investor.ui.view.information.editor.InstrumentEditor;
+import ru.ulmc.investor.ui.view.information.editor.SymbolEditor;
 import ru.ulmc.investor.user.Permission;
 
 import java.util.List;
@@ -41,8 +42,8 @@ public class InformationPage extends CommonPage {
     public static final PageParams PAGE = PageParams.from(Permission.INFORMATION_READ).build();
     private final StocksService stocksService;
     private final BrokerEditor brokerEditor;
-    private final InstrumentEditor instrumentEditor;
-    private Grid<InstrumentViewModel> stocksGrid = new Grid<>();
+    private final SymbolEditor symbolEditor;
+    private Grid<SymbolViewModel> stocksGrid = new Grid<>();
     private Grid<BrokerLightModel> brokersGrid = new Grid<>();
     private Button addBrokerBtn;
     private Button addStockBtn;
@@ -51,14 +52,14 @@ public class InformationPage extends CommonPage {
     public InformationPage(UserService userService,
                            StocksService stocksService,
                            BrokerEditor brokerEditor,
-                           InstrumentEditor instrumentEditor) {
+                           SymbolEditor symbolEditor) {
         super(userService, PAGE);
         this.stocksService = stocksService;
         this.brokerEditor = brokerEditor;
-        this.instrumentEditor = instrumentEditor;
+        this.symbolEditor = symbolEditor;
 
         brokerEditor.addOpenedChangeListener(this::onEditorClose);
-        instrumentEditor.addOpenedChangeListener(this::onEditorClose);
+        symbolEditor.addOpenedChangeListener(this::onEditorClose);
         init();
     }
 
@@ -89,7 +90,7 @@ public class InformationPage extends CommonPage {
     }
 
     private void reloadData() {
-        Optional<BrokerLightModel> firstSelectedItem = brokersGrid.getSelectionModel().getFirstSelectedItem();
+        val firstSelectedItem = brokersGrid.getSelectionModel().getFirstSelectedItem();
         List<BrokerLightModel> brokers = stocksService.getBrokers();
         brokersGrid.setItems(brokers);
         firstSelectedItem.ifPresent(broker -> {
@@ -99,10 +100,10 @@ public class InformationPage extends CommonPage {
     }
 
     private void initStocksGrid() {
-        stocksGrid.addColumn(InstrumentViewModel::getName)
+        stocksGrid.addColumn(SymbolViewModel::getName)
                 .setHeader("Название")
                 .setFlexGrow(4);
-        stocksGrid.addColumn(InstrumentViewModel::getCode)
+        stocksGrid.addColumn(SymbolViewModel::getCode)
                 .setHeader("Код");
         stocksGrid.addColumn(model -> model.getCurrency() + " -> " + model.getCloseCurrency())
                 .setHeader("Валюты");
@@ -130,7 +131,7 @@ public class InformationPage extends CommonPage {
     }
 
     private void reloadStocks(BrokerLightModel broker) {
-        List<InstrumentViewModel> stocks = stocksService.getStockPositionsByBrokerId(broker.getId());
+        List<SymbolViewModel> stocks = stocksService.getStockPositionsByBrokerId(broker.getId());
         stocksGrid.setItems(stocks);
     }
 
@@ -142,7 +143,7 @@ public class InformationPage extends CommonPage {
         addStockBtn = new Button("Добавить позицию", new Icon(VaadinIcon.PLUS));
         addStockBtn.setEnabled(false);
         addStockBtn.addClickListener(buttonClickEvent ->
-                brokersGrid.getSelectionModel().getFirstSelectedItem().ifPresent(instrumentEditor::create));
+                brokersGrid.getSelectionModel().getFirstSelectedItem().ifPresent(symbolEditor::create));
 
         return new HorizontalLayout(addBrokerBtn, addStockBtn);
     }
@@ -161,7 +162,8 @@ public class InformationPage extends CommonPage {
         });
         Button removeBtn = new Button(new Icon(VaadinIcon.TRASH));
         removeBtn.addClickListener(buttonClickEvent -> {
-            String text = "Эта операция безвозвратно удалит брокера и все его активы \"" + model.getName() + "\"?";
+            String text = "Эта операция безвозвратно удалит брокера и все его активы \""
+                    + model.getName() + "\"?";
             ConfirmDialog.show(text, () -> {
                 stocksService.removeBroker(model.getId());
                 reloadData();
@@ -174,13 +176,14 @@ public class InformationPage extends CommonPage {
         return hl;
     }
 
-    private Component createRowControls(InstrumentViewModel model) {
+    private Component createRowControls(SymbolViewModel model) {
 
         Button editBtn = new Button(new Icon(VaadinIcon.PENCIL));
-        editBtn.addClickListener(buttonClickEvent -> instrumentEditor.edit(model));
+        editBtn.addClickListener(buttonClickEvent -> symbolEditor.edit(model));
         Button removeBtn = new Button(new Icon(VaadinIcon.TRASH));
         removeBtn.addClickListener(buttonClickEvent -> {
-            String text = "Эта операция безвозвратно удалит справочный актив \"" + model.getName() + "\"?";
+            String text = "Эта операция безвозвратно удалит справочный актив \""
+                    + model.getName() + "\"?";
             ConfirmDialog.show(text, () -> {
                 stocksService.removeStock(model.getId());
                 reloadData();

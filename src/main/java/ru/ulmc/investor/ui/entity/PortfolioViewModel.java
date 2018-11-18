@@ -7,14 +7,12 @@ import ru.ulmc.investor.data.entity.Position;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static java.lang.ThreadLocal.withInitial;
+import static java.math.BigDecimal.valueOf;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 import static org.hibernate.Hibernate.isInitialized;
@@ -64,7 +62,7 @@ public class PortfolioViewModel implements Serializable {
         return BIG_DECIMAL_SHORT.get().format(getPositions().stream()
                 .mapToDouble(bp -> bp.getOpenPrice()
                         .multiply(bp.getCurrencyOpenPrice())
-                        .multiply(BigDecimal.valueOf(bp.getQuantity()))
+                        .multiply(valueOf(bp.getQuantity()))
                         .doubleValue()) //hmmmm...
                 .sum());
     }
@@ -83,18 +81,18 @@ public class PortfolioViewModel implements Serializable {
 
         private static PositionsStat of(Position pos) {
             PositionsStat ps = new PositionsStat();
-            ps.currency = pos.getInstrument().getCurrency();
+            ps.currency = pos.getSymbol().getCurrency();
             if (pos.getClosed()) {
                 ps.closedPositionSum = pos.getClosePrice()
-                        .multiply(BigDecimal.valueOf(pos.getQuantity()));
+                        .multiply(valueOf(pos.getQuantity()));
                 ps.closedPositionCount = 1;
                 ps.openPositionCount = 0;
                 BigDecimal openSum = pos.getOpenPrice()
-                        .multiply(BigDecimal.valueOf(pos.getQuantity()));
+                        .multiply(valueOf(pos.getQuantity()));
                 ps.profit = ps.closedPositionSum.subtract(openSum);
             } else {
                 ps.openPositionSum = pos.getOpenPrice()
-                        .multiply(BigDecimal.valueOf(pos.getQuantity()));
+                        .multiply(valueOf(pos.getQuantity()));
             }
             return ps;
         }

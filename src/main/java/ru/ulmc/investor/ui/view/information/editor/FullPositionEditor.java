@@ -9,18 +9,15 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.binder.BeanValidationBinder;
-import com.vaadin.flow.data.binder.RequiredFieldConfigurator;
-import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.data.renderer.TemplateRenderer;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import lombok.NonNull;
-import ru.ulmc.investor.data.entity.Instrument;
+import ru.ulmc.investor.data.entity.Symbol;
 import ru.ulmc.investor.service.StocksService;
 import ru.ulmc.investor.ui.MainLayout;
-import ru.ulmc.investor.ui.entity.InstrumentViewModel;
+import ru.ulmc.investor.ui.entity.SymbolViewModel;
 import ru.ulmc.investor.ui.entity.PortfolioLightModel;
 import ru.ulmc.investor.ui.entity.PositionViewModel;
 
@@ -45,7 +42,7 @@ public class FullPositionEditor extends CommonPopupEditor<PositionViewModel> {
     TextField currencyPriceClosed = new TextField("Цена валюты (закр.)");
     DatePicker dateClosed = new DatePicker("Дата закрытия");
     TextField timeClosed = new TextField("Время открытия");
-    ComboBox<InstrumentViewModel> stockComboBox = new ComboBox<>("Позиция");
+    ComboBox<SymbolViewModel> stockComboBox = new ComboBox<>("Позиция");
     private StocksService stocksService;
 
     public FullPositionEditor(StocksService stocksService) {
@@ -106,7 +103,7 @@ public class FullPositionEditor extends CommonPopupEditor<PositionViewModel> {
     @Override
     protected void onSave(PositionViewModel bean) {
         stocksService.save(PositionViewModel.toEntity(bean));
-        String text = "Позиция \"" + bean.getInstrument().getName() + "\" успешно сохранена!";
+        String text = "Позиция \"" + bean.getSymbol().getName() + "\" успешно сохранена!";
         Notification.show(text, 2500, Notification.Position.MIDDLE);
     }
 
@@ -163,18 +160,18 @@ public class FullPositionEditor extends CommonPopupEditor<PositionViewModel> {
         stockComboBox.setWidth("50%");
         stockComboBox.setAutofocus(true);
         stockComboBox.setAllowCustomValue(false);
-        stockComboBox.setItemLabelGenerator(InstrumentViewModel::getName);
-        stockComboBox.setRenderer(TemplateRenderer.<InstrumentViewModel>of(getTemplate())
-                .withProperty("name", InstrumentViewModel::getName)
-                .withProperty("currency", InstrumentViewModel::getCurrency)
-                .withProperty("currencyClose", InstrumentViewModel::getCloseCurrency)
+        stockComboBox.setItemLabelGenerator(SymbolViewModel::getName);
+        stockComboBox.setRenderer(TemplateRenderer.<SymbolViewModel>of(getTemplate())
+                .withProperty("name", SymbolViewModel::getName)
+                .withProperty("currency", SymbolViewModel::getCurrency)
+                .withProperty("currencyClose", SymbolViewModel::getCloseCurrency)
                 .withProperty("broker", stockViewModel -> stockViewModel.getBroker().getName())
-                .withProperty("code", InstrumentViewModel::getCode));
+                .withProperty("symbol", SymbolViewModel::getCode));
     }
 
     private String getTemplate() {
         return "<div class='position-combo'>[[item.name]]<br>" +
-                "<span class='sub-text'>[[[item.code]]] | [[item.currency]]/[[item.currencyClose]] " +
+                "<span class='sub-text'>[[[item.symbol]]] | [[item.currency]]/[[item.currencyClose]] " +
                 "| <span class='broker'>[[item.broker]]</span>" +
                 "</span></div>";
     }
@@ -182,7 +179,7 @@ public class FullPositionEditor extends CommonPopupEditor<PositionViewModel> {
     public void create(@NonNull PortfolioLightModel parent) {
         edit(PositionViewModel.builder()
                 .portfolio(parent)
-                .instrument(InstrumentViewModel.of(Instrument.empty()))
+                .symbol(SymbolViewModel.of(Symbol.empty()))
                 .build());
     }
 
@@ -193,7 +190,7 @@ public class FullPositionEditor extends CommonPopupEditor<PositionViewModel> {
     }
 
     private void loadStockData() {
-        List<InstrumentViewModel> stockPositions = stocksService.getStockPositions();
+        List<SymbolViewModel> stockPositions = stocksService.getStockPositions();
         stockComboBox.setFilteredItems(stockPositions);
         stockComboBox.setItems(stockPositions);
     }
