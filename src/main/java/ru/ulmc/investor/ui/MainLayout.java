@@ -7,7 +7,9 @@ import com.vaadin.flow.component.page.Viewport;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.theme.Theme;
 import com.vaadin.flow.theme.lumo.Lumo;
+import com.vaadin.flow.theme.material.Material;
 
+//@Theme(value = Material.class, variant = Material.DARK)
 @Theme(value = Lumo.class, variant = Lumo.DARK)
 @HtmlImport("frontend://styles/shared-styles.html")
 @Viewport("width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes")

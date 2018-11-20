@@ -11,6 +11,7 @@ import ru.ulmc.investor.ui.entity.PositionViewModel;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -21,15 +22,11 @@ import java.util.function.Function;
 
 import static java.lang.ThreadLocal.withInitial;
 import static java.time.LocalDateTime.now;
+import static ru.ulmc.investor.ui.util.Format.BIG_DECIMAL_FORMAT;
+import static ru.ulmc.investor.ui.util.Format.HOURS_MINUTES_FORMATTER;
 
 @Slf4j
 class PositionBinder extends BeanValidationBinder<PositionViewModel> {
-    static final DateTimeFormatter df = DateTimeFormatter.ofPattern("HH:mm");
-    static final ThreadLocal<NumberFormat> numFormat = withInitial(() -> {
-        DecimalFormat decimalFormat = new DecimalFormat("#.#");
-        decimalFormat.setParseBigDecimal(true);
-        return decimalFormat;
-    });
     private FullPositionEditor editor;
 
     public PositionBinder(FullPositionEditor editor) {
@@ -43,7 +40,7 @@ class PositionBinder extends BeanValidationBinder<PositionViewModel> {
         if (isEmpty(price)) {
             return;
         }
-        position.setCurrencyOpenPrice((BigDecimal) numFormat.get().parse(price));
+        position.setCurrencyOpenPrice(parse(price));
     }
 
     private static String getCurrencyOpenPrice(PositionViewModel position) {
@@ -53,7 +50,7 @@ class PositionBinder extends BeanValidationBinder<PositionViewModel> {
 
     private static String getStringFromPrice(BigDecimal openPrice) {
         if (openPrice != null) {
-            return numFormat.get().format(openPrice);
+            return BIG_DECIMAL_FORMAT.get().format(openPrice);
         }
         return null;
     }
@@ -63,7 +60,7 @@ class PositionBinder extends BeanValidationBinder<PositionViewModel> {
         if (isEmpty(price)) {
             return;
         }
-        position.setOpenPrice((BigDecimal) numFormat.get().parse(price));
+        position.setOpenPrice(parse(price));
     }
 
     private static String getOpenPrice(PositionViewModel position) {
@@ -101,7 +98,7 @@ class PositionBinder extends BeanValidationBinder<PositionViewModel> {
         if (isEmpty(price)) {
             return;
         }
-        position.setCurrencyClosePrice((BigDecimal) numFormat.get().parse(price));
+        position.setCurrencyClosePrice(parse(price));
     }
 
     private static String getCurrencyClosePrice(PositionViewModel position) {
@@ -114,7 +111,7 @@ class PositionBinder extends BeanValidationBinder<PositionViewModel> {
         if (isEmpty(price)) {
             return;
         }
-        position.setClosePrice((BigDecimal) numFormat.get().parse(price));
+        position.setClosePrice(parse(price));
     }
 
     private static String getClosePrice(PositionViewModel position) {
@@ -192,7 +189,7 @@ class PositionBinder extends BeanValidationBinder<PositionViewModel> {
             return;
         }
         LocalDateTime dateTime = getter.apply(position);
-        LocalTime parsedTime = LocalTime.from(df.parse(time));
+        LocalTime parsedTime = LocalTime.from(HOURS_MINUTES_FORMATTER.parse(time));
         if (dateTime != null) {
             dateTime = dateTime.with(parsedTime);
         } else {
@@ -204,7 +201,7 @@ class PositionBinder extends BeanValidationBinder<PositionViewModel> {
     private static String getStringFromTime(LocalDateTime date) {
         if (date != null) {
             LocalTime from = LocalTime.from(date);
-            return df.format(from);
+            return HOURS_MINUTES_FORMATTER.format(from);
         }
         return null;
     }
@@ -268,10 +265,20 @@ class PositionBinder extends BeanValidationBinder<PositionViewModel> {
 
     ValidationResult getValidationResult(String s, String errorMessage) {
         boolean notEmpty = s != null && !s.isEmpty();
-        if (notEmpty && Integer.parseInt(s) > 0) {
+        if (notEmpty && isPositive(s)) {
             return ValidationResult.ok();
         } else {
             return ValidationResult.error(errorMessage);
         }
+    }
+
+    private static boolean isPositive(String s) {
+        return parse(s).compareTo(BigDecimal.ZERO) > 0;
+    }
+
+    @SneakyThrows
+    private static BigDecimal parse(String s) {
+        String preparedNumber = s.replace(".", ",");
+        return (BigDecimal) BIG_DECIMAL_FORMAT.get().parse(preparedNumber);
     }
 }

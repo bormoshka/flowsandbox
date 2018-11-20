@@ -30,8 +30,6 @@ import static java.util.stream.Collectors.toList;
 @SpringComponent
 @Route(value = "symbol/edit", layout = MainLayout.class)
 public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
-    private static final Locale LOCALE = new Locale("ru", "RU");
-    private static final String DECIMAL_PATTERN = "\\d+(\\.\\d{1,10})?";
     private final MarketService marketService;
     private final StocksService stocksService;
     private ComboBox<CompanyViewModel> symbolCombo = new ComboBox<>("Код");
@@ -147,7 +145,7 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
 
     private void initCommonCurrencyComboBox(ComboBox<Currency> combo, boolean required) {
         combo.setItems(Currency.values());
-        combo.setFilteredItems(Currency.values());
+        //combo.setFilteredItems(Currency.values());
         combo.setRequired(required);
         combo.setWidth("33.33%");
         combo.setItemLabelGenerator(this::getCurrencyLabel);
@@ -159,7 +157,7 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
 
     private void initInstrumentTypeCombo() {
         instrumentType.setItems(SymbolType.values());
-        instrumentType.setFilteredItems(SymbolType.values());
+       // instrumentType.setFilteredItems(SymbolType.values());
         instrumentType.setValue(SymbolType.STOCK);
         instrumentType.setItemLabelGenerator(SymbolType::getDescription);
         instrumentType.setRequired(true);
@@ -168,7 +166,7 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
 
     private void initStockExchangeCombo() {
         stockExchange.setItems(StockExchange.values());
-        stockExchange.setFilteredItems(StockExchange.values());
+       // stockExchange.setFilteredItems(StockExchange.values());
         stockExchange.setValue(StockExchange.UNKNOWN);
         stockExchange.setItemLabelGenerator(StockExchange::getName);
         stockExchange.setRequired(true);
@@ -219,7 +217,7 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
         List<BrokerLightModel> brokers = stocksService.getBrokers();
 
         broker.setItems(brokers);
-        broker.setFilteredItems(brokers);
+      //  broker.setFilteredItems(brokers);
     }
 
     public void create(BrokerLightModel brokerLightModel) {
@@ -241,14 +239,12 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
     private void loadSymbolsComboData() {
         List<CompanyViewModel> companyViewModels = getSymbolsComboData("");
         symbolCombo.setItems(companyViewModels);
-        symbolCombo.setFilteredItems(new TreeSet<>(companyViewModels));
+       // symbolCombo.setFilteredItems(new TreeSet<>(companyViewModels));
     }
 
     private List<CompanyViewModel> getSymbolsComboData(@NonNull String symbolSubString) {
-        List<CompanyViewModel> models = marketService.getCachedCompanies(symbolSubString).stream()
+        return marketService.getCachedCompanies(symbolSubString).stream()
                 .map(CompanyViewModel::of)
                 .collect(toList());
-
-        return models;
     }
 }

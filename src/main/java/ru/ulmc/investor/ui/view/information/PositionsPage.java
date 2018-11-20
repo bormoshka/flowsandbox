@@ -25,7 +25,6 @@ import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import ru.ulmc.investor.data.entity.LastPrice;
-import ru.ulmc.investor.service.IEXMarketService;
 import ru.ulmc.investor.service.MarketService;
 import ru.ulmc.investor.service.StocksService;
 import ru.ulmc.investor.service.UserService;
@@ -75,6 +74,7 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
     private Checkbox enableRefreshCheckbox;
     private PositionSumComponent sumResultComponent;
     private Button addBtn;
+    private List<PortfolioLightModel> allPortfoliosInfo;
 
     @Autowired
     public PositionsPage(UserService userService,
@@ -244,9 +244,7 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
     }
 
     private void defaultSelect() {
-        if (!portfolioComboBox.getFilteredItems().isEmpty()) {
-            portfolioComboBox.setValue(portfolioComboBox.getFilteredItems().get(0));
-        }
+        allPortfoliosInfo.stream().findFirst().ifPresent(portfolioComboBox::setValue);
         statusFilter.setValue(PositionStatusFilter.OPEN);
     }
 
@@ -286,9 +284,8 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
     }
 
     private void loadPortfolioData() {
-        List<PortfolioLightModel> allPortfoliosInfo = stocksService.getAllPortfoliosInfo();
+        allPortfoliosInfo = stocksService.getAllPortfoliosInfo();
         portfolioComboBox.setItems(allPortfoliosInfo);
-        portfolioComboBox.setFilteredItems(allPortfoliosInfo);
     }
 
     @Override
@@ -336,8 +333,8 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
     }
 
     private Optional<PortfolioLightModel> selectPortfolioFromParam(List<String> params) {
-        Long paramId = Long.valueOf(params.get(0));
-        return portfolioComboBox.getFilteredItems().stream()
+        long paramId = Long.parseLong(params.get(0));
+        return allPortfoliosInfo.stream()
                 .filter(s -> s.getId() == paramId)
                 .findFirst();
     }

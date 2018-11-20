@@ -24,15 +24,14 @@ import ru.ulmc.investor.ui.entity.PositionViewModel;
 import java.util.List;
 import java.util.Locale;
 
+import static ru.ulmc.investor.ui.util.Format.DECIMAL_PATTERN;
+import static ru.ulmc.investor.ui.util.Format.LOCALE;
 import static ru.ulmc.investor.ui.util.UiUtils.getCalendarI18n;
 
 @UIScope
 @SpringComponent
 @Route(value = "positions/edit", layout = MainLayout.class)
 public class FullPositionEditor extends CommonPopupEditor<PositionViewModel> {
-    private static final Locale LOCALE = new Locale("ru", "RU");
-    private static final String DECIMAL_PATTERN = "\\d+(\\.\\d{1,10})?";
-
     TextField quantity = new TextField("Количество");
     TextField currencyPrice = new TextField("Цена валюты (откр.)");
     TextField price = new TextField("Цена открытия");
@@ -191,7 +190,7 @@ public class FullPositionEditor extends CommonPopupEditor<PositionViewModel> {
 
     private void loadStockData() {
         List<SymbolViewModel> stockPositions = stocksService.getStockPositions();
-        stockComboBox.setFilteredItems(stockPositions);
+       // stockComboBox.setFilteredItems(stockPositions);
         stockComboBox.setItems(stockPositions);
     }
 
