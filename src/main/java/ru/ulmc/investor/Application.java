@@ -18,8 +18,8 @@ import java.util.logging.Logger;
 public class Application {
 
     public static void main(String[] args) {
-        SpringApplication.run(Application.class, args);
         Logger.getLogger(OkHttpClient.class.getName()).setLevel(Level.FINE); //todo: remove after debug
+        SpringApplication.run(Application.class, args);
     }
 
 }

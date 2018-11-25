@@ -2,6 +2,7 @@ package ru.ulmc.investor.service;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import pl.zankowski.iextrading4j.api.marketdata.LastTrade;
@@ -16,6 +17,8 @@ import ru.ulmc.investor.service.convert.IEXMarketConverter;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Slf4j
 @Service
@@ -62,7 +65,7 @@ public class MarketService {
     }
 
     public void getLastPricesAsync(Collection<String> symbol, Consumer<LastPrice> quoteConsumer) {
-        extMarketService.executeLastTrade(symbol, lastTrade -> {
+        extMarketService.subscribeForLastTrade(symbol, lastTrade -> {
             log.trace("Getting last prices async {}", lastTrade);
             handleNewLastPrice(quoteConsumer, lastTrade);
         });

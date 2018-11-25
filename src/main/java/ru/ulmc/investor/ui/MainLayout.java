@@ -3,6 +3,7 @@ package ru.ulmc.investor.ui;
 import com.vaadin.flow.component.dependency.HtmlImport;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.page.Push;
 import com.vaadin.flow.component.page.Viewport;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.theme.Theme;
@@ -10,6 +11,7 @@ import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.material.Material;
 
 //@Theme(value = Material.class, variant = Material.DARK)
+@Push
 @Theme(value = Lumo.class, variant = Lumo.DARK)
 @HtmlImport("frontend://styles/shared-styles.html")
 @Viewport("width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes")

@@ -40,12 +40,12 @@ import ru.ulmc.investor.ui.view.information.editor.FullPositionEditor;
 import ru.ulmc.investor.ui.view.information.editor.OpenPositionEditor;
 import ru.ulmc.investor.user.Permission;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
 import static ru.ulmc.investor.ui.util.RouterUtil.navigateTo;
 import static ru.ulmc.investor.ui.util.RouterUtil.unescapeParams;
 
@@ -64,7 +64,8 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
     private final ClosedPositionEditor closedPositionEditor;
     private final FullPositionEditor fullPositionEditor;
     private final MarketService quoteService;
-    private final Map<String, PositionViewModel> perSymbolPositions = new ConcurrentHashMap<>();
+    private final Map<String, Collection<PositionViewModel>> perSymbolPositions = new ConcurrentHashMap<>();
+    private final AtomicBoolean enableAutoUpdate = new AtomicBoolean();
     private StocksService stocksService;
     private OpenPositionEditor openPositionEditor;
     private Grid<PositionViewModel> grid;
@@ -102,14 +103,6 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
         }
     }
 
-    @Scheduled(initialDelay = 1000, fixedRateString = "${ui.positions-page.update-rate}")
-    public void scheduledUpdate() {
-        log.trace("Scheduled task {}", Thread.currentThread().getName());
-        if (enableRefreshCheckbox.getValue()) {
-            currentUi.access(this::setLastPrices);
-        }
-    }
-
     private void setLastPrices() {
         log.trace("Updating last prices");
         findAndUpdateLastPrice();
@@ -121,9 +114,11 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
     }
 
     private void updateLastPrice(LastPrice lastPrice) {
-        PositionViewModel model = perSymbolPositions.get(lastPrice.getSymbol());
-        model.setMarketPrice(lastPrice.getLastPrice());
-        grid.getDataProvider().refreshItem(model);
+        Collection<PositionViewModel> models = perSymbolPositions.get(lastPrice.getSymbol());
+        models.forEach(model -> {
+            model.setMarketPrice(lastPrice.getLastPrice());
+            grid.getDataProvider().refreshItem(model);
+        });
     }
 
     private void onFilterStateChange(AbstractField.ComponentValueChangeEvent changeEvent) {
@@ -157,10 +152,14 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
     private void applyFilters(long portfolioId) {
         List<PositionViewModel> positions = applyFilterByStatus(portfolioId);
         perSymbolPositions.clear();
-        positions.forEach(pos -> perSymbolPositions.put(pos.getStockCode(), pos));
+        positions.forEach(this::addToPositionsMap);
         grid.setItems(positions);
-        findAndUpdateLastPrice();
         sumResultComponent.update(positions);
+        findAndUpdateLastPrice();
+    }
+
+    private boolean addToPositionsMap(PositionViewModel pos) {
+        return perSymbolPositions.computeIfAbsent(pos.getStockCode(), s -> new HashSet<>()).add(pos);
     }
 
     private void initGrid() {
@@ -200,6 +199,7 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
 
     private void initAutoUpdateCheckbox() {
         enableRefreshCheckbox = new Checkbox("Автообновление рынка");
+        enableRefreshCheckbox.addValueChangeListener(event -> enableAutoUpdate.set(event.getValue()));
         enableRefreshCheckbox.setValue(true);
     }
 

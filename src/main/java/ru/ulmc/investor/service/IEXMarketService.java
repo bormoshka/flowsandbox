@@ -75,8 +75,14 @@ public class IEXMarketService {
         return quote;
     }
 
-    public void executeLastTrade(Collection<String> symbols,
-                                 Consumer<LastTrade> lastTradeConsumer) {
+    /**
+     * Подписывается на изменения по инструментам.
+     *
+     * @param symbols Набор инструментов для подписания
+     * @param lastTradeConsumer потребитель обновлений
+     */
+    public void subscribeForLastTrade(Collection<String> symbols,
+                                      Consumer<LastTrade> lastTradeConsumer) {
         LastAsyncRequestBuilder requestBuilder = new LastAsyncRequestBuilder();
         symbols.forEach(requestBuilder::withSymbol);
 
