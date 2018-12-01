@@ -12,5 +12,5 @@ public interface LastPriceRepository extends CrudRepository<LastPrice, UUID> {
 
     LastPrice findFirstBySymbolAndDateTime(String symbol, LocalDateTime time);
 
-    LastPrice findFirstBySymbolOrderByDateTime(String symbol);
+    LastPrice findFirstBySymbolOrderByDateTimeDesc(String symbol);
 }

@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -22,7 +23,8 @@ import ru.ulmc.investor.data.repository.PositionRepository;
 import ru.ulmc.investor.data.repository.StockRepository;
 import ru.ulmc.investor.service.StocksService;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+
 
 @Slf4j
 @RunWith(SpringRunner.class)
@@ -49,6 +51,14 @@ public class RepositoryTest {
         assertThat(fetched).isNotEmpty();
         log.info("Saved and fetched entity {}", fetched);
 
+    }
+
+    @Test
+    public void testStockRepository() {
+        Broker broker = stocksService.save(getBroker("Сбербанк"));
+        Symbol symbol = stocksService.save(getStock(broker));
+        List<String> strings = stockRepository.selectAllSymbols();
+        assertThat(strings).contains(symbol.getSymbol());
     }
 
     @Test

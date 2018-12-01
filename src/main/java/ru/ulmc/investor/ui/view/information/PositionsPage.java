@@ -17,20 +17,38 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.data.renderer.TemplateRenderer;
-import com.vaadin.flow.router.*;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEvent;
+import com.vaadin.flow.router.BeforeLeaveEvent;
+import com.vaadin.flow.router.HasUrlParameter;
+import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.WildcardParameter;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import ru.ulmc.investor.data.entity.LastPrice;
+import ru.ulmc.investor.event.dto.PriceUpdateEvent;
+import ru.ulmc.investor.event.listeners.Registration;
+import ru.ulmc.investor.event.listeners.StaticUpdateBroadcaster;
 import ru.ulmc.investor.service.MarketService;
 import ru.ulmc.investor.service.StocksService;
 import ru.ulmc.investor.service.UserService;
 import ru.ulmc.investor.ui.MainLayout;
 import ru.ulmc.investor.ui.entity.PortfolioLightModel;
 import ru.ulmc.investor.ui.entity.PositionViewModel;
+import ru.ulmc.investor.ui.util.Notify;
 import ru.ulmc.investor.ui.util.PageParams;
 import ru.ulmc.investor.ui.util.PositionStatusFilter;
 import ru.ulmc.investor.ui.util.TopLevelPage;
@@ -40,12 +58,7 @@ import ru.ulmc.investor.ui.view.information.editor.FullPositionEditor;
 import ru.ulmc.investor.ui.view.information.editor.OpenPositionEditor;
 import ru.ulmc.investor.user.Permission;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import static java.util.Collections.emptyList;
-import static java.util.Objects.requireNonNull;
 import static ru.ulmc.investor.ui.util.RouterUtil.navigateTo;
 import static ru.ulmc.investor.ui.util.RouterUtil.unescapeParams;
 
@@ -64,8 +77,10 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
     private final ClosedPositionEditor closedPositionEditor;
     private final FullPositionEditor fullPositionEditor;
     private final MarketService quoteService;
+    private final StaticUpdateBroadcaster staticBroadcaster;
     private final Map<String, Collection<PositionViewModel>> perSymbolPositions = new ConcurrentHashMap<>();
     private final AtomicBoolean enableAutoUpdate = new AtomicBoolean();
+    private final Registration registration;
     private StocksService stocksService;
     private OpenPositionEditor openPositionEditor;
     private Grid<PositionViewModel> grid;
@@ -83,18 +98,60 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
                          FullPositionEditor fullPositionEditor,
                          OpenPositionEditor openPositionEditor,
                          ClosedPositionEditor closedPositionEditor,
-                         MarketService quoteService) {
+                         MarketService quoteService,
+                         StaticUpdateBroadcaster staticBroadcaster) {
         super(userService, PAGE);
         this.stocksService = stocksService;
         this.fullPositionEditor = fullPositionEditor;
         this.openPositionEditor = openPositionEditor;
         this.closedPositionEditor = closedPositionEditor;
         this.quoteService = quoteService;
+        this.staticBroadcaster = staticBroadcaster;
         this.openPositionEditor.addOpenedChangeListener(this::onEditorStateChange);
         this.fullPositionEditor.addOpenedChangeListener(this::onEditorStateChange);
         this.closedPositionEditor.addOpenedChangeListener(this::onEditorStateChange);
+        this.currentUi = UI.getCurrent();
         init();
-        currentUi = UI.getCurrent();
+        registration = staticBroadcaster.subscribe(this::onUpdateEvent);
+    }
+
+    @Override
+    public void onEnter(BeforeEnterEvent beforeEnterEvent) {
+        if (portfolioComboBox.getValue() == null && statusFilter.getValue() == null) {
+            defaultSelect();
+        }
+    }
+
+    @Override
+    public void beforeLeave(BeforeLeaveEvent beforeLeaveEvent) {
+        registration.unregister();
+    }
+
+    @Override
+    public void setParameter(BeforeEvent beforeEvent, @WildcardParameter String s) {
+        if (s != null) {
+            log.debug("With Parameter {}", s);
+            List<String> params = unescapeParams(s);
+            if (params.size() == 2) {
+                selectPortfolioFromParam(params).ifPresent(portfolioComboBox::setValue);
+                statusFilter.setValue(PositionStatusFilter.valueOf(params.get(1)));
+                applyFilters(Long.valueOf(params.get(0)));
+            } else {
+                defaultSelect();
+            }
+        }
+    }
+
+    void onUpdateEvent(PriceUpdateEvent event) {
+        final Collection<LastPrice> lastPrices = event.getLastPrices();
+        if (currentUi == null) {
+            registration.unregister();
+            return;
+        }
+        currentUi.access(() -> {
+            lastPrices.forEach(this::updateLastPrice);
+            Notify.fastToast("Price update event received"); //debug purpose
+        });
     }
 
     private void onEditorStateChange(GeneratedVaadinDialog.OpenedChangeEvent<Dialog> event) {
@@ -103,18 +160,13 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
         }
     }
 
-    private void setLastPrices() {
-        log.trace("Updating last prices");
-        findAndUpdateLastPrice();
-    }
-
     private void findAndUpdateLastPrice() {
-        quoteService.getLastPricesAsync(perSymbolPositions.keySet(), lastPrice ->
-                currentUi.access(() -> updateLastPrice(lastPrice)));
+        quoteService.getBatchLastPricesAsync(perSymbolPositions.keySet(), lastPrice ->
+                currentUi.access(() -> lastPrice.forEach(this::updateLastPrice)));
     }
 
     private void updateLastPrice(LastPrice lastPrice) {
-        Collection<PositionViewModel> models = perSymbolPositions.get(lastPrice.getSymbol());
+        val models = perSymbolPositions.getOrDefault(lastPrice.getSymbol(), emptyList());
         models.forEach(model -> {
             model.setMarketPrice(lastPrice.getLastPrice());
             grid.getDataProvider().refreshItem(model);
@@ -288,13 +340,6 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
         portfolioComboBox.setItems(allPortfoliosInfo);
     }
 
-    @Override
-    public void onEnter(BeforeEnterEvent beforeEnterEvent) {
-        if (portfolioComboBox.getValue() == null && statusFilter.getValue() == null) {
-            defaultSelect();
-        }
-    }
-
     private Component createRowControls(PositionViewModel pvm) {
         Button editBtn = new Button(new Icon(VaadinIcon.PENCIL));
         editBtn.addClickListener(buttonClickEvent -> {
@@ -317,25 +362,11 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
         return hl;
     }
 
-    @Override
-    public void setParameter(BeforeEvent beforeEvent, @WildcardParameter String s) {
-        if (s != null) {
-            log.debug("With Parameter {}", s);
-            List<String> params = unescapeParams(s);
-            if (params.size() == 2) {
-                selectPortfolioFromParam(params).ifPresent(portfolioComboBox::setValue);
-                statusFilter.setValue(PositionStatusFilter.valueOf(params.get(1)));
-                applyFilters(Long.valueOf(params.get(0)));
-            } else {
-                defaultSelect();
-            }
-        }
-    }
-
     private Optional<PortfolioLightModel> selectPortfolioFromParam(List<String> params) {
         long paramId = Long.parseLong(params.get(0));
         return allPortfoliosInfo.stream()
                 .filter(s -> s.getId() == paramId)
                 .findFirst();
     }
+
 }

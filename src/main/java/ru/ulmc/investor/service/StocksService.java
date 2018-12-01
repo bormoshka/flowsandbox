@@ -159,7 +159,7 @@ public class StocksService {
     }
 
     public Optional<LastPrice> findLastPrice(String stockCode) {
-        return ofNullable(lastPriceRepository.findFirstBySymbolOrderByDateTime(stockCode));
+        return ofNullable(lastPriceRepository.findFirstBySymbolOrderByDateTimeDesc(stockCode));
     }
 
     private List<PositionViewModel> toPositionViewModel(
