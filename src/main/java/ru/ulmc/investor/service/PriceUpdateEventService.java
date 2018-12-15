@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import ru.ulmc.investor.data.entity.LastPrice;
 import ru.ulmc.investor.data.repository.StockRepository;
 import ru.ulmc.investor.event.dto.PriceUpdateEvent;
+import ru.ulmc.investor.event.listeners.StaticUpdateBroadcaster;
 
 import java.util.Collection;
 import java.util.List;
@@ -18,21 +19,28 @@ public class PriceUpdateEventService {
     private final ApplicationEventPublisher applicationEventPublisher;
     private final StockRepository stockRepository;
     private final MarketService marketService;
+    private StaticUpdateBroadcaster broadcaster;
 
     @Autowired
     public PriceUpdateEventService(ApplicationEventPublisher applicationEventPublisher,
                                    StockRepository stockRepository,
-                                   MarketService marketService) {
+                                   MarketService marketService,
+                                   StaticUpdateBroadcaster broadcaster) {
         this.applicationEventPublisher = applicationEventPublisher;
         this.stockRepository = stockRepository;
         this.marketService = marketService;
+        this.broadcaster = broadcaster;
     }
 
 
     @Scheduled(initialDelayString = "${ui.positions-page.update-rate}",
             fixedRateString = "${ui.positions-page.update-rate}")
     public void scheduledUpdate() {
-        log.trace("Scheduled task {}", Thread.currentThread().getName());
+        boolean hasAnyListener = broadcaster.hasListenersFor(PriceUpdateEvent.class);
+        log.debug("Scheduled task has any listener: {}", hasAnyListener);
+        if(!hasAnyListener) {
+            return;
+        }
         List<String> symbols = stockRepository.selectAllSymbols();
         if (!symbols.isEmpty()) {
             marketService.getBatchLastPricesAsync(symbols, this::broadcast);

@@ -35,7 +35,7 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
     private ComboBox<CompanyViewModel> symbolCombo = new ComboBox<>("Код");
     private ComboBox<Currency> positionCurrency = new ComboBox<>("Валюта позиции");
     private ComboBox<Currency> positionCloseCurrency = new ComboBox<>("Валюта закрытия позиции");
-    private ComboBox<SymbolType> instrumentType = new ComboBox<>("Тип инструмента");
+    private ComboBox<SymbolType> symbolType = new ComboBox<>("Тип инструмента");
     private ComboBox<StockExchange> stockExchange = new ComboBox<>("Биржа");
     private ComboBox<BrokerLightModel> broker = new ComboBox<>("Брокер");
     private CompanyComponent companyInfo = new CompanyComponent();
@@ -46,7 +46,7 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
         this.marketService = marketService;
         this.stocksService = stocksService;
         init();
-        setWidth("600px");
+        setWidth("650px");
     }
 
     @Override
@@ -57,7 +57,7 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
         descRow.setWidth("100%");
         HorizontalLayout companyRow = new HorizontalLayout(companyInfo);
         companyRow.setWidth("100%");
-        currencyRow = new HorizontalLayout(instrumentType, positionCurrency, positionCloseCurrency);
+        currencyRow = new HorizontalLayout(symbolType, positionCurrency, positionCloseCurrency);
         currencyRow.setWidth("100%");
         currencyRow.setVisible(false);
 
@@ -74,7 +74,7 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
         binder.bind(positionCurrency, SymbolViewModel::getCurrency, SymbolViewModel::setCurrency);
         binder.bind(positionCloseCurrency, SymbolViewModel::getCloseCurrency, SymbolViewModel::setCloseCurrency);
         binder.bind(broker, SymbolViewModel::getBroker, SymbolViewModel::setBroker);
-        binder.bind(instrumentType, SymbolViewModel::getType, SymbolViewModel::setType);
+        binder.bind(symbolType, SymbolViewModel::getType, SymbolViewModel::setType);
 
         binder.setRequiredConfigurator(RequiredFieldConfigurator.NOT_NULL);
         binder.addValueChangeListener(valueChangeEvent -> changed = true);
@@ -116,17 +116,17 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
         if (!event.isFromClient()) {
             return;
         }
-        String detail = event.getDetail();
-        CompanyViewModel viewModel = CompanyViewModel.of(detail);
-        Collection<CompanyViewModel> newCollection = getSymbolsComboData(detail);
-        Optional<CompanyViewModel> first = newCollection.stream()
+        final String partialSymbolCode = event.getDetail();
+        Collection<CompanyViewModel> preSaved = getSymbolsComboData(partialSymbolCode);
+        Optional<CompanyViewModel> first = preSaved.stream()
                 .filter(companyViewModel -> companyViewModel.getSymbol()
-                        .equalsIgnoreCase(viewModel.getSymbol()))
+                        .equalsIgnoreCase(partialSymbolCode))
                 .findFirst();
         if (first.isPresent()) {
             loadCompanyInfo(first.get());
         } else {
-            symbolCombo.setErrorMessage("Инструмент с таким кодом не найден");
+            loadCompanyInfo(CompanyViewModel.of(partialSymbolCode));
+         //   symbolCombo.setErrorMessage("Инструмент с таким кодом не найден");
         }
     }
 
@@ -156,12 +156,12 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
     }
 
     private void initInstrumentTypeCombo() {
-        instrumentType.setItems(SymbolType.values());
+        symbolType.setItems(SymbolType.values());
        // instrumentType.setFilteredItems(SymbolType.values());
-        instrumentType.setValue(SymbolType.STOCK);
-        instrumentType.setItemLabelGenerator(SymbolType::getDescription);
-        instrumentType.setRequired(true);
-        instrumentType.setWidth("33.33%");
+        symbolType.setValue(SymbolType.STOCK);
+        symbolType.setItemLabelGenerator(SymbolType::getDescription);
+        symbolType.setRequired(true);
+        symbolType.setWidth("33.33%");
     }
 
     private void initStockExchangeCombo() {
@@ -174,7 +174,7 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
     }
 
     private void enableFields(boolean enabled) {
-        instrumentType.setEnabled(enabled);
+        symbolType.setEnabled(enabled);
         positionCurrency.setEnabled(enabled);
         positionCloseCurrency.setEnabled(enabled);
         stockExchange.setEnabled(enabled);
@@ -184,7 +184,7 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
 
     private void loadCompanyInfo(CompanyViewModel symbolCandidate) {
         if (symbolCandidate == null || symbolCandidate.getSymbol() == null) {
-            onEmptyCompany(false);
+            onCompanyChange(false);
             return;
         }
         if (symbolCandidate.isReliable()) {
@@ -199,17 +199,17 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
         }
     }
 
-    private void onEmptyCompany(boolean b) {
-        enableFields(b);
-        currencyRow.setVisible(b);
-        companyInfo.setVisible(b);
+    private void onCompanyChange(boolean present) {
+        enableFields(present);
+        currencyRow.setVisible(present);
+        companyInfo.setVisible(present);
     }
 
     private void updateFieldsWithCompanyData(CompanyViewModel company) {
         this.company = company;
-        onEmptyCompany(true);
+        onCompanyChange(true);
         companyInfo.update(company);
-        instrumentType.setValue(SymbolType.valueOf(company.getType()));
+        symbolType.setValue(SymbolType.valueOf(company.getType()));
         stockExchange.setValue(StockExchange.valueOf(company.getStockExchange()));
     }
 
@@ -227,12 +227,13 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
     }
 
     public void edit(@NonNull SymbolViewModel viewModel) {
-        String code = viewModel.getCode();
-        if (code != null) {
-            symbolCombo.setItems(CompanyViewModel.of(code));
-        }
         loadBrokerComboBoxData();
         loadSymbolsComboData();
+
+        String code = viewModel.getCode();
+        if (code != null) {
+            symbolCombo.setValue(CompanyViewModel.of(code));
+        }
         onEdit(viewModel);
     }
 

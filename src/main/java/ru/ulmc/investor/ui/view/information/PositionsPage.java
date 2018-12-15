@@ -46,6 +46,7 @@ import ru.ulmc.investor.service.MarketService;
 import ru.ulmc.investor.service.StocksService;
 import ru.ulmc.investor.service.UserService;
 import ru.ulmc.investor.ui.MainLayout;
+import ru.ulmc.investor.ui.entity.CommonLightModel;
 import ru.ulmc.investor.ui.entity.PortfolioLightModel;
 import ru.ulmc.investor.ui.entity.PositionViewModel;
 import ru.ulmc.investor.ui.util.Notify;
@@ -119,6 +120,10 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
     public void onEnter(BeforeEnterEvent beforeEnterEvent) {
         if (portfolioComboBox.getValue() == null && statusFilter.getValue() == null) {
             defaultSelect();
+            long id = Optional.ofNullable(portfolioComboBox.getValue())
+                    .map(CommonLightModel::getId)
+                    .orElse(-1L);
+            applyFilters(id);
         }
     }
 
@@ -137,7 +142,7 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
                 statusFilter.setValue(PositionStatusFilter.valueOf(params.get(1)));
                 applyFilters(Long.valueOf(params.get(0)));
             } else {
-                defaultSelect();
+               // defaultSelect();
             }
         }
     }

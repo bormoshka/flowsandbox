@@ -11,8 +11,9 @@ import ru.ulmc.investor.event.dto.PriceUpdateEvent;
 import java.util.*;
 import java.util.function.Consumer;
 
-import static com.helger.commons.collection.ArrayHelper.isNotEmpty;
 import static java.util.Collections.emptySet;
+import static org.hibernate.internal.util.collections.CollectionHelper.isNotEmpty;
+
 @Slf4j
 @Component
 public class StaticUpdateBroadcaster implements ApplicationListener<PayloadApplicationEvent<PriceUpdateEvent>> {
@@ -34,5 +35,9 @@ public class StaticUpdateBroadcaster implements ApplicationListener<PayloadAppli
         listeners.computeIfAbsent(PriceUpdateEvent.class, s -> new HashSet<>()).add(listener);
         return Registration.register(listener, eventListener ->
                 listeners.getOrDefault(PriceUpdateEvent.class, emptySet()).remove(eventListener));
+    }
+
+    public boolean hasListenersFor(Class event) {
+       return isNotEmpty(listeners.get(event));
     }
 }
