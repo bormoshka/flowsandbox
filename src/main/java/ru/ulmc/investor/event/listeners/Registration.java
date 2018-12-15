@@ -13,7 +13,7 @@ public class Registration {
     private final Consumer<BaseEventListener> unregister;
 
     public void unregister() {
-
+        unregister.accept(baseEventListener);
     }
 
     static Registration register(BaseEventListener baseEventListener,
