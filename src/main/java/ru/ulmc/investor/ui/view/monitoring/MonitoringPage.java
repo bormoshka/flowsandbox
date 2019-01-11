@@ -16,8 +16,6 @@ import ru.ulmc.investor.ui.util.TopLevelPage;
 import ru.ulmc.investor.ui.view.CommonPage;
 import ru.ulmc.investor.user.Permission;
 
-@SpringComponent
-@UIScope
 @TopLevelPage(menuName = "Мониторинг", order = 2)
 @Route(value =  "monitor", layout = MainLayout.class)
 public class MonitoringPage extends CommonPage {

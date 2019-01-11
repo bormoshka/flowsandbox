@@ -11,8 +11,6 @@ import ru.ulmc.investor.service.UserService;
 import ru.ulmc.investor.ui.MainLayout;
 import ru.ulmc.investor.ui.util.PageParams;
 
-@SpringComponent
-@UIScope
 @Route(value = "403", layout = MainLayout.class)
 public class Error403Page extends CommonPage {
     public static final PageParams PAGE = PageParams.builder().build();

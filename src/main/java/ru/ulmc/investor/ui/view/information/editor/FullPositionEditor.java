@@ -13,6 +13,10 @@ import com.vaadin.flow.data.renderer.TemplateRenderer;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
+
 import lombok.NonNull;
 import ru.ulmc.investor.data.entity.Symbol;
 import ru.ulmc.investor.service.StocksService;
@@ -28,8 +32,8 @@ import static ru.ulmc.investor.ui.util.Format.DECIMAL_PATTERN;
 import static ru.ulmc.investor.ui.util.Format.LOCALE;
 import static ru.ulmc.investor.ui.util.UiUtils.getCalendarI18n;
 
-@UIScope
 @SpringComponent
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 @Route(value = "positions/edit", layout = MainLayout.class)
 public class FullPositionEditor extends CommonPopupEditor<PositionViewModel> {
     TextField quantity = new TextField("Количество");

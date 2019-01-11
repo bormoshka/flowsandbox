@@ -12,13 +12,11 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeLeaveEvent;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.spring.annotation.SpringComponent;
-import com.vaadin.flow.spring.annotation.UIScope;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -40,9 +38,10 @@ import ru.ulmc.investor.ui.view.information.editor.BrokerEditor;
 import ru.ulmc.investor.ui.view.information.editor.SymbolEditor;
 import ru.ulmc.investor.user.Permission;
 
+import static ru.ulmc.investor.ui.util.GridUtils.getRowControls;
+
 @Slf4j
-@SpringComponent
-@UIScope
+@PageTitle("Справочник")
 @TopLevelPage(menuName = "Справочник", order = 3)
 @Route(value = "stocks", layout = MainLayout.class)
 public class InformationPage extends CommonPage {
@@ -50,11 +49,11 @@ public class InformationPage extends CommonPage {
     private final StocksService stocksService;
     private final BrokerEditor brokerEditor;
     private final SymbolEditor symbolEditor;
-    private Grid<SymbolViewModel> stocksGrid = new Grid<>();
-    private Grid<BrokerLightModel> brokersGrid = new Grid<>();
-    private Button addBrokerBtn;
-    private Button addStockBtn;
-    private String uuid = UUID.randomUUID().toString();
+    private final Grid<SymbolViewModel> stocksGrid = new Grid<>();
+    private final Grid<BrokerLightModel> brokersGrid = new Grid<>();
+    private final Button addBrokerBtn = new Button("Добавить брокера", new Icon(VaadinIcon.PLUS));
+    private final Button addStockBtn = new Button("Добавить позицию", new Icon(VaadinIcon.PLUS));
+    private final String uuid = UUID.randomUUID().toString();
 
     @Autowired
     public InformationPage(UserService userService,
@@ -78,7 +77,6 @@ public class InformationPage extends CommonPage {
     }
 
     private void init() {
-        layout.removeAll();
         initBrokersGrid();
         initStocksGrid();
         layout.add(initControls());
@@ -96,14 +94,13 @@ public class InformationPage extends CommonPage {
     public void onEnter(BeforeEnterEvent beforeEnterEvent) {
         //вот тут начинаем заполнять страницу
         log.debug("VIEW UUID: {}", uuid);
-        reloadBrokers();
-        stocksGrid.setItems(Collections.emptyList());
+        reloadDataWithReselection();
     }
 
     @Override
     public void onExit(BeforeLeaveEvent beforeLeaveEvent) {
-        brokersGrid.deselectAll();
-        stocksGrid.deselectAll();
+        // brokersGrid.deselectAll();
+        // stocksGrid.deselectAll();
     }
 
     private void reloadDataWithReselection() {
@@ -156,11 +153,9 @@ public class InformationPage extends CommonPage {
     }
 
     private Component initControls() {
-        addBrokerBtn = new Button("Добавить брокера", new Icon(VaadinIcon.PLUS));
         addBrokerBtn.setEnabled(true);
         addBrokerBtn.addClickListener(buttonClickEvent -> brokerEditor.create());
 
-        addStockBtn = new Button("Добавить позицию", new Icon(VaadinIcon.PLUS));
         addStockBtn.setEnabled(false);
         addStockBtn.addClickListener(buttonClickEvent ->
                 brokersGrid.getSelectionModel().getFirstSelectedItem().ifPresent(symbolEditor::create));
@@ -196,22 +191,18 @@ public class InformationPage extends CommonPage {
     }
 
     private Component createRowControls(SymbolViewModel model) {
+        return getRowControls(e -> symbolEditor.edit(model),
+                e -> ConfirmDialog.show(getRemoveConfirmText(model),
+                () -> onRemoveConfirmed(model)));
+    }
 
-        Button editBtn = new Button(new Icon(VaadinIcon.PENCIL));
-        editBtn.addClickListener(buttonClickEvent -> symbolEditor.edit(model));
-        Button removeBtn = new Button(new Icon(VaadinIcon.TRASH));
-        removeBtn.addClickListener(buttonClickEvent -> {
-            String text = "Эта операция безвозвратно удалит справочный актив \""
-                    + model.getName() + "\"?";
-            ConfirmDialog.show(text, () -> {
-                stocksService.removeStock(model.getId());
-                reloadDataWithReselection();
-            });
-        });
-        HorizontalLayout hl = new HorizontalLayout();
-        hl.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
-        hl.setSizeFull();
-        hl.add(editBtn, removeBtn);
-        return hl;
+    private void onRemoveConfirmed(SymbolViewModel model) {
+        stocksService.removeStock(model.getId());
+        reloadDataWithReselection();
+    }
+
+    private String getRemoveConfirmText(SymbolViewModel model) {
+        return "Эта операция безвозвратно удалит справочный актив \""
+                + model.getName() + "\"?";
     }
 }

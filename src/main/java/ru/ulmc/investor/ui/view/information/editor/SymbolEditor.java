@@ -8,10 +8,21 @@ import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.RequiredFieldConfigurator;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
-import com.vaadin.flow.spring.annotation.UIScope;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+
 import lombok.NonNull;
-import ru.ulmc.investor.data.entity.*;
+import ru.ulmc.investor.data.entity.CompanyInfo;
 import ru.ulmc.investor.data.entity.Currency;
+import ru.ulmc.investor.data.entity.StockExchange;
+import ru.ulmc.investor.data.entity.Symbol;
+import ru.ulmc.investor.data.entity.SymbolType;
 import ru.ulmc.investor.service.MarketService;
 import ru.ulmc.investor.service.StocksService;
 import ru.ulmc.investor.ui.MainLayout;
@@ -22,12 +33,11 @@ import ru.ulmc.investor.ui.entity.CompanyViewModel;
 import ru.ulmc.investor.ui.entity.SymbolViewModel;
 import ru.ulmc.investor.ui.util.Notify;
 
-import java.util.*;
-
 import static java.util.stream.Collectors.toList;
+import static org.springframework.beans.factory.config.ConfigurableBeanFactory.SCOPE_PROTOTYPE;
 
-@UIScope
 @SpringComponent
+@Scope(SCOPE_PROTOTYPE)
 @Route(value = "symbol/edit", layout = MainLayout.class)
 public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
     private final MarketService marketService;
@@ -42,6 +52,7 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
     private CompanyViewModel company;
     private HorizontalLayout currencyRow;
 
+    @Autowired
     public SymbolEditor(MarketService marketService, StocksService stocksService) {
         this.marketService = marketService;
         this.stocksService = stocksService;
@@ -126,7 +137,7 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
             loadCompanyInfo(first.get());
         } else {
             loadCompanyInfo(CompanyViewModel.of(partialSymbolCode));
-         //   symbolCombo.setErrorMessage("Инструмент с таким кодом не найден");
+            //   symbolCombo.setErrorMessage("Инструмент с таким кодом не найден");
         }
     }
 
@@ -157,7 +168,7 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
 
     private void initInstrumentTypeCombo() {
         symbolType.setItems(SymbolType.values());
-       // instrumentType.setFilteredItems(SymbolType.values());
+        // instrumentType.setFilteredItems(SymbolType.values());
         symbolType.setValue(SymbolType.STOCK);
         symbolType.setItemLabelGenerator(SymbolType::getDescription);
         symbolType.setRequired(true);
@@ -166,7 +177,7 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
 
     private void initStockExchangeCombo() {
         stockExchange.setItems(StockExchange.values());
-       // stockExchange.setFilteredItems(StockExchange.values());
+        // stockExchange.setFilteredItems(StockExchange.values());
         stockExchange.setValue(StockExchange.UNKNOWN);
         stockExchange.setItemLabelGenerator(StockExchange::getName);
         stockExchange.setRequired(true);
@@ -180,7 +191,6 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
         stockExchange.setEnabled(enabled);
         saveBtn.setEnabled(enabled);
     }
-
 
     private void loadCompanyInfo(CompanyViewModel symbolCandidate) {
         if (symbolCandidate == null || symbolCandidate.getSymbol() == null) {
@@ -217,7 +227,7 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
         List<BrokerLightModel> brokers = stocksService.getBrokers();
 
         broker.setItems(brokers);
-      //  broker.setFilteredItems(brokers);
+        //  broker.setFilteredItems(brokers);
     }
 
     public void create(BrokerLightModel brokerLightModel) {
@@ -240,7 +250,7 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
     private void loadSymbolsComboData() {
         List<CompanyViewModel> companyViewModels = getSymbolsComboData("");
         symbolCombo.setItems(companyViewModels);
-       // symbolCombo.setFilteredItems(new TreeSet<>(companyViewModels));
+        // symbolCombo.setFilteredItems(new TreeSet<>(companyViewModels));
     }
 
     private List<CompanyViewModel> getSymbolsComboData(@NonNull String symbolSubString) {

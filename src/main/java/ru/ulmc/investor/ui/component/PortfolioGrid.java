@@ -12,7 +12,6 @@ import ru.ulmc.investor.ui.entity.PortfolioViewModel;
 import javax.annotation.PostConstruct;
 import java.util.function.Consumer;
 
-@SpringComponent
 @UIScope
 public class PortfolioGrid extends Grid<PortfolioViewModel> {
 

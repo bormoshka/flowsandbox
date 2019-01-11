@@ -7,6 +7,10 @@ import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
@@ -16,8 +20,8 @@ import ru.ulmc.investor.ui.entity.PositionViewModel;
 
 import static ru.ulmc.investor.ui.entity.PositionViewModel.toEntity;
 
-@UIScope
 @SpringComponent
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 @Route(value = "positions/close", layout = MainLayout.class)
 public class ClosedPositionEditor extends FullPositionEditor {
     private ComboBox<CloseType> closeTypeComboBox;

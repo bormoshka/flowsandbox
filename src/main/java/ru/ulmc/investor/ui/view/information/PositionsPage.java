@@ -21,6 +21,7 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.BeforeLeaveEvent;
 import com.vaadin.flow.router.HasUrlParameter;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.WildcardParameter;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -64,8 +65,7 @@ import static ru.ulmc.investor.ui.util.RouterUtil.navigateTo;
 import static ru.ulmc.investor.ui.util.RouterUtil.unescapeParams;
 
 @Slf4j
-@SpringComponent
-@UIScope
+@PageTitle("Позиции")
 @HtmlImport("frontend://src/position/position-name-cell.html")
 @HtmlImport("frontend://src/position/position-date.html")
 @HtmlImport("frontend://src/position/position-profit.html")

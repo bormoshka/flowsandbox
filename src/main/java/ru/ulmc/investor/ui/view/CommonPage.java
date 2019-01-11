@@ -23,10 +23,9 @@ public abstract class CommonPage extends Div implements HasElement, BeforeLeaveO
         this.pageParams = pageParams;
         setupLayout();
         addClassName("root-layout__content");
-        //setTitle(pageParams.getPageHeading());
     }
 
-    protected void setupLayout() {
+    private void setupLayout() {
         layout.setSizeFull();
         setSizeFull();
         add(layout);

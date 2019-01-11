@@ -9,10 +9,11 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeLeaveEvent;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.spring.annotation.SpringComponent;
-import com.vaadin.flow.spring.annotation.UIScope;
+
 import org.springframework.beans.factory.annotation.Autowired;
+
 import ru.ulmc.investor.service.StocksService;
 import ru.ulmc.investor.service.UserService;
 import ru.ulmc.investor.ui.MainLayout;
@@ -22,14 +23,15 @@ import ru.ulmc.investor.ui.util.PageParams;
 import ru.ulmc.investor.ui.util.TopLevelPage;
 import ru.ulmc.investor.ui.view.CommonPage;
 import ru.ulmc.investor.ui.view.information.editor.PortfolioEditor;
-import ru.ulmc.investor.user.Permission;
 
-@SpringComponent
-@UIScope
+import static ru.ulmc.investor.ui.util.GridUtils.getRowControls;
+import static ru.ulmc.investor.user.Permission.INFORMATION_READ;
+
+@PageTitle("Портфолио")
 @TopLevelPage(menuName = "Портфолио", order = 2)
 @Route(value = "portfolio", layout = MainLayout.class)
 public class PortfolioPage extends CommonPage {
-    public static final PageParams PAGE = PageParams.from(Permission.INFORMATION_READ).build();
+    private static final PageParams PAGE = PageParams.from(INFORMATION_READ).build();
     private StocksService stocksService;
     private PortfolioEditor portfolioEditor;
     private Grid<PortfolioViewModel> grid;
@@ -37,7 +39,9 @@ public class PortfolioPage extends CommonPage {
     private Button createBtn;
 
     @Autowired
-    public PortfolioPage(UserService userService, StocksService stocksService, PortfolioEditor portfolioEditor) {
+    public PortfolioPage(UserService userService,
+                         StocksService stocksService,
+                         PortfolioEditor portfolioEditor) {
         super(userService, PAGE);
         this.stocksService = stocksService;
         this.portfolioEditor = portfolioEditor;
@@ -77,9 +81,7 @@ public class PortfolioPage extends CommonPage {
 
     private void initControlLayout() {
         createBtn = new Button("Добавить", new Icon(VaadinIcon.PLUS));
-        createBtn.addClickListener(buttonClickEvent -> {
-            portfolioEditor.create();
-        });
+        createBtn.addClickListener(buttonClickEvent -> portfolioEditor.create());
         controlsLayout = new HorizontalLayout();
         controlsLayout.setWidth("100%");
         // Label pageLabel = new Label("Управление портфолио");
@@ -107,20 +109,18 @@ public class PortfolioPage extends CommonPage {
     }
 
     private Component createRowControls(PortfolioViewModel pvm) {
-        Button editBtn = new Button(new Icon(VaadinIcon.PENCIL));
-        editBtn.addClickListener(buttonClickEvent -> {
-            portfolioEditor.edit(pvm);
-        });
-        Button removeBtn = new Button(new Icon(VaadinIcon.TRASH));
-        removeBtn.addClickListener(buttonClickEvent -> {
-            ConfirmDialog.show("Удалить портфолио \"" + pvm.getName() + "\"?", () -> {
-                stocksService.removePortfolio(pvm.getId());
-                reloadData();
-            });
-        });
-        HorizontalLayout hl = new HorizontalLayout();
-        hl.setSizeFull();
-        hl.add(editBtn, removeBtn);
-        return hl;
+        return getRowControls(e -> portfolioEditor.edit(pvm),
+                e -> ConfirmDialog.show(
+                        getRemoveConfirmDialogText(pvm),
+                        () -> onRemoveConfirmed(pvm)));
+    }
+
+    private String getRemoveConfirmDialogText(PortfolioViewModel pvm) {
+        return "Удалить портфолио \"" + pvm.getName() + "\"?";
+    }
+
+    private void onRemoveConfirmed(PortfolioViewModel pvm) {
+        stocksService.removePortfolio(pvm.getId());
+        reloadData();
     }
 }

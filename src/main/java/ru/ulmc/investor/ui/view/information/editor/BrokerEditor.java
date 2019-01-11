@@ -11,13 +11,17 @@ import com.vaadin.flow.data.binder.RequiredFieldConfigurator;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
+
 import lombok.NonNull;
 import ru.ulmc.investor.data.entity.Broker;
 import ru.ulmc.investor.service.StocksService;
 import ru.ulmc.investor.ui.MainLayout;
 
-@UIScope
 @SpringComponent
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 @Route(value = "stocks/broker-edit", layout = MainLayout.class)
 public class BrokerEditor extends CommonPopupEditor<Broker> {
     private TextField name;
