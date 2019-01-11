@@ -1,0 +1,35 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'idea'
+
+group = 'ru.ulmc.vaadin'
+version = '1.0-SNAPSHOT'
+
+description = """FlowSandBox"""
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+tasks.withType(JavaCompile) {
+	options.encoding = 'UTF-8'
+}
+
+repositories {        
+     maven { url "http://maven.vaadin.com/vaadin-addons" }
+     maven { url "https://maven.vaadin.com/vaadin-prereleases" }
+     maven { url "http://repo.maven.apache.org/maven2" }
+}
+
+dependencies {
+    compile group: 'io.github.classgraph', name: 'classgraph', version:'4.4.12'
+    compile group: 'com.vaadin', name: 'vaadin-spring', version:'10.1.1'
+    compile group: 'com.vaadin', name: 'vaadin-core', version:'12.0.3'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version:'2.0.5.RELEASE'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version:'2.0.5.RELEASE'
+    compile group: 'org.springframework.boot', name: 'spring-boot-devtools', version:'2.0.5.RELEASE'
+    compile group: 'com.h2database', name: 'h2', version:'1.4.197'
+    compile group: 'pl.zankowski', name: 'iextrading4j-all', version:'2.3.0'
+   
+    testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version:'2.0.5.RELEASE'
+    compileOnly group: 'org.projectlombok', name: 'lombok', version:'1.18.4'
+}
