@@ -2,6 +2,7 @@ package ru.ulmc.investor.ui.view.monitoring;
 
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeLeaveEvent;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -50,5 +51,10 @@ public class MonitoringPage extends CommonPage {
         //вот тут начинаем заполнять страницу
         grid.setItems();
         grid.setItems(monitoringService.getEvents());
+    }
+
+    @Override
+    public void onExit(BeforeLeaveEvent beforeLeaveEvent) {
+        //Эта страница для виду...
     }
 }

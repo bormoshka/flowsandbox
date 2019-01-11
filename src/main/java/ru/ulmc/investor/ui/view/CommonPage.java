@@ -34,9 +34,11 @@ public abstract class CommonPage extends Div implements HasElement, BeforeLeaveO
 
     public abstract void onEnter(BeforeEnterEvent beforeEnterEvent);
 
+    public abstract void onExit(BeforeLeaveEvent beforeLeaveEvent);
+
     @Override
     public void beforeLeave(BeforeLeaveEvent beforeLeaveEvent) {
-
+        onExit(beforeLeaveEvent);
     }
 
     @Override

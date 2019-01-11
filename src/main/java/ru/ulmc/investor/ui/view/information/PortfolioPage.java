@@ -8,6 +8,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeLeaveEvent;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -52,6 +53,11 @@ public class PortfolioPage extends CommonPage {
     public void onEnter(BeforeEnterEvent beforeEnterEvent) {
         //вот тут начинаем заполнять страницу данными
         reloadData();
+    }
+
+    @Override
+    public void onExit(BeforeLeaveEvent beforeLeaveEvent) {
+        //todo: handle leave event
     }
 
     private void reloadData() {

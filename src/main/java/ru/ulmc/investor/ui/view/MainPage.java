@@ -35,19 +35,7 @@ public class MainPage extends CommonPage {
     }
 
     @Override
-    public void beforeLeave(BeforeLeaveEvent event) {
-       // UserSettings userSettings = userService.getCurrentUser().getUserSettings();
-       // if (!userSettings.isHelloMessageRead()) {
-       //     BeforeLeaveEvent.ContinueNavigationAction action = event.postpone();
-       //     Dialog dialog = new Dialog();
-       //     dialog.addDialogCloseActionListener(clsEvent -> {
-       //         userSettings.setHelloMessageRead(true);
-       //         dialog.close();
-       //         action.proceed();});
-       //     dialog.setCloseOnEsc(true);
-       //     dialog.setCloseOnOutsideClick(true);
-       //     dialog.add(new Label("Просто хотел сказать \"привет!\" перед тем как ты покинешь эту страницу."));
-       //     //dialog.open(); // todo: удалить эту демку
-       // }
+    public void onExit(BeforeLeaveEvent beforeLeaveEvent) {
+        // Тут нечего делать. Пока...
     }
 }

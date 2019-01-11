@@ -128,6 +128,11 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
     }
 
     @Override
+    public void onExit(BeforeLeaveEvent beforeLeaveEvent) {
+        //todo: handle leave event
+    }
+
+    @Override
     public void beforeLeave(BeforeLeaveEvent beforeLeaveEvent) {
         registration.unregister();
     }

@@ -11,11 +11,20 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeLeaveEvent;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
-import lombok.val;
+
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import ru.ulmc.investor.data.entity.Broker;
 import ru.ulmc.investor.service.StocksService;
 import ru.ulmc.investor.service.UserService;
@@ -31,9 +40,7 @@ import ru.ulmc.investor.ui.view.information.editor.BrokerEditor;
 import ru.ulmc.investor.ui.view.information.editor.SymbolEditor;
 import ru.ulmc.investor.user.Permission;
 
-import java.util.List;
-import java.util.Optional;
-
+@Slf4j
 @SpringComponent
 @UIScope
 @TopLevelPage(menuName = "Справочник", order = 3)
@@ -47,6 +54,7 @@ public class InformationPage extends CommonPage {
     private Grid<BrokerLightModel> brokersGrid = new Grid<>();
     private Button addBrokerBtn;
     private Button addStockBtn;
+    private String uuid = UUID.randomUUID().toString();
 
     @Autowired
     public InformationPage(UserService userService,
@@ -65,11 +73,12 @@ public class InformationPage extends CommonPage {
 
     private void onEditorClose(GeneratedVaadinDialog.OpenedChangeEvent<Dialog> dialogCloseActionEvent) {
         if (!dialogCloseActionEvent.isOpened()) {
-            reloadData();
+            reloadDataWithReselection();
         }
     }
 
     private void init() {
+        layout.removeAll();
         initBrokersGrid();
         initStocksGrid();
         layout.add(initControls());
@@ -86,17 +95,29 @@ public class InformationPage extends CommonPage {
     @Override
     public void onEnter(BeforeEnterEvent beforeEnterEvent) {
         //вот тут начинаем заполнять страницу
-        reloadData();
+        log.debug("VIEW UUID: {}", uuid);
+        reloadBrokers();
+        stocksGrid.setItems(Collections.emptyList());
     }
 
-    private void reloadData() {
+    @Override
+    public void onExit(BeforeLeaveEvent beforeLeaveEvent) {
+        brokersGrid.deselectAll();
+        stocksGrid.deselectAll();
+    }
+
+    private void reloadDataWithReselection() {
         val firstSelectedItem = brokersGrid.getSelectionModel().getFirstSelectedItem();
-        List<BrokerLightModel> brokers = stocksService.getBrokers();
-        brokersGrid.setItems(brokers);
+        reloadBrokers();
         firstSelectedItem.ifPresent(broker -> {
             brokersGrid.select(broker);
             reloadStocks(broker);
         });
+    }
+
+    private void reloadBrokers() {
+        List<BrokerLightModel> brokers = stocksService.getBrokers();
+        brokersGrid.setItems(brokers);
     }
 
     private void initStocksGrid() {
@@ -111,7 +132,6 @@ public class InformationPage extends CommonPage {
                 .setWidth("130px");
         stocksGrid.setSizeFull();
     }
-
 
     private void initBrokersGrid() {
         brokersGrid.setSizeFull();
@@ -148,7 +168,6 @@ public class InformationPage extends CommonPage {
         return new HorizontalLayout(addBrokerBtn, addStockBtn);
     }
 
-
     private Component createRowControls(BrokerLightModel model) {
 
         Button editBtn = new Button(new Icon(VaadinIcon.PENCIL));
@@ -166,7 +185,7 @@ public class InformationPage extends CommonPage {
                     + model.getName() + "\"?";
             ConfirmDialog.show(text, () -> {
                 stocksService.removeBroker(model.getId());
-                reloadData();
+                reloadDataWithReselection();
             });
         });
         HorizontalLayout hl = new HorizontalLayout();
@@ -186,7 +205,7 @@ public class InformationPage extends CommonPage {
                     + model.getName() + "\"?";
             ConfirmDialog.show(text, () -> {
                 stocksService.removeStock(model.getId());
-                reloadData();
+                reloadDataWithReselection();
             });
         });
         HorizontalLayout hl = new HorizontalLayout();

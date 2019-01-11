@@ -2,6 +2,7 @@ package ru.ulmc.investor.ui.view;
 
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeLeaveEvent;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -27,5 +28,10 @@ public class Error403Page extends CommonPage {
     @Override
     public void onEnter(BeforeEnterEvent beforeEnterEvent) {
         //вот тут начинаем заполнять страницу
+    }
+
+    @Override
+    public void onExit(BeforeLeaveEvent beforeLeaveEvent) {
+        // нечего делать тут
     }
 }
