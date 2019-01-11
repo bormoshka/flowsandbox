@@ -1,5 +1,6 @@
 package ru.ulmc.investor.ui.view.information.editor;
 
+import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.GeneratedVaadinComboBox.CustomValueSetEvent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -8,21 +9,10 @@ import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.RequiredFieldConfigurator;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.context.annotation.Scope;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-
 import lombok.NonNull;
-import ru.ulmc.investor.data.entity.CompanyInfo;
-import ru.ulmc.investor.data.entity.Currency;
-import ru.ulmc.investor.data.entity.StockExchange;
-import ru.ulmc.investor.data.entity.Symbol;
-import ru.ulmc.investor.data.entity.SymbolType;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
+import ru.ulmc.investor.data.entity.*;
 import ru.ulmc.investor.service.MarketService;
 import ru.ulmc.investor.service.StocksService;
 import ru.ulmc.investor.ui.MainLayout;
@@ -32,6 +22,10 @@ import ru.ulmc.investor.ui.entity.CommonLightModel;
 import ru.ulmc.investor.ui.entity.CompanyViewModel;
 import ru.ulmc.investor.ui.entity.SymbolViewModel;
 import ru.ulmc.investor.ui.util.Notify;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 
 import static java.util.stream.Collectors.toList;
 import static org.springframework.beans.factory.config.ConfigurableBeanFactory.SCOPE_PROTOTYPE;
@@ -51,6 +45,8 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
     private CompanyComponent companyInfo = new CompanyComponent();
     private CompanyViewModel company;
     private HorizontalLayout currencyRow;
+    // workaround of https://github.com/vaadin/vaadin-combo-box-flow/issues/167
+    private String previousPartialSymbolCode = "";
 
     @Autowired
     public SymbolEditor(MarketService marketService, StocksService stocksService) {
@@ -116,28 +112,34 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
 
     private void initSymbolCombo() {
         symbolCombo.setAllowCustomValue(true);
-        symbolCombo.addValueChangeListener(event -> loadCompanyInfo(event.getValue()));
+        symbolCombo.addValueChangeListener(this::onSymbolValueChange);
         symbolCombo.setEnabled(true);
         symbolCombo.setWidth("66.77%");
         symbolCombo.addCustomValueSetListener(this::onCustomSymbolComboBoxValue);
         symbolCombo.setItemLabelGenerator(CompanyViewModel::getSymbol);
     }
 
+    private void onSymbolValueChange(ComponentValueChangeEvent<ComboBox<CompanyViewModel>, CompanyViewModel> event) {
+        if (event.isFromClient() && event.getValue() != null) {
+            loadCompanyInfo(event.getValue());
+        }
+    }
+
     private void onCustomSymbolComboBoxValue(CustomValueSetEvent<ComboBox<CompanyViewModel>> event) {
-        if (!event.isFromClient()) {
+        final String partialSymbolCode = event.getDetail();
+        if (!event.isFromClient()
+                || previousPartialSymbolCode.equalsIgnoreCase(partialSymbolCode)) {
             return;
         }
-        final String partialSymbolCode = event.getDetail();
+        previousPartialSymbolCode = partialSymbolCode;
         Collection<CompanyViewModel> preSaved = getSymbolsComboData(partialSymbolCode);
         Optional<CompanyViewModel> first = preSaved.stream()
-                .filter(companyViewModel -> companyViewModel.getSymbol()
-                        .equalsIgnoreCase(partialSymbolCode))
+                .filter(company -> company.getSymbol().equalsIgnoreCase(partialSymbolCode))
                 .findFirst();
         if (first.isPresent()) {
             loadCompanyInfo(first.get());
         } else {
             loadCompanyInfo(CompanyViewModel.of(partialSymbolCode));
-            //   symbolCombo.setErrorMessage("Инструмент с таким кодом не найден");
         }
     }
 
@@ -193,7 +195,9 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
     }
 
     private void loadCompanyInfo(CompanyViewModel symbolCandidate) {
-        if (symbolCandidate == null || symbolCandidate.getSymbol() == null) {
+        if (symbolCandidate == null
+                || symbolCandidate.getSymbol() == null
+                || symbolCandidate.getSymbol().trim().isEmpty()) {
             onCompanyChange(false);
             return;
         }
@@ -203,8 +207,12 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
         }
         Optional<CompanyInfo> response = marketService.getCompanyInfo(symbolCandidate.getSymbol());
         if (response.isPresent()) {
-            updateFieldsWithCompanyData(CompanyViewModel.of(response.get()));
+            CompanyViewModel company = CompanyViewModel.of(response.get());
+            updateFieldsWithCompanyData(company);
+            symbolCombo.setInvalid(false);
         } else {
+            onCompanyChange(false);
+            symbolCombo.setInvalid(true);
             symbolCombo.setErrorMessage("Инструмент с таким кодом не найден");
         }
     }
@@ -250,7 +258,6 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
     private void loadSymbolsComboData() {
         List<CompanyViewModel> companyViewModels = getSymbolsComboData("");
         symbolCombo.setItems(companyViewModels);
-        // symbolCombo.setFilteredItems(new TreeSet<>(companyViewModels));
     }
 
     private List<CompanyViewModel> getSymbolsComboData(@NonNull String symbolSubString) {

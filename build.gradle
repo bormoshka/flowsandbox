@@ -31,5 +31,6 @@ dependencies {
     compile group: 'pl.zankowski', name: 'iextrading4j-all', version:'2.3.0'
    
     testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version:'2.0.5.RELEASE'
+    testCompile group: 'org.projectlombok', name: 'lombok', version:'1.18.4'
     compileOnly group: 'org.projectlombok', name: 'lombok', version:'1.18.4'
 }
