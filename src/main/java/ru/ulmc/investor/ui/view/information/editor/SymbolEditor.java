@@ -162,6 +162,7 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
         combo.setRequired(required);
         combo.setWidth("33.33%");
         combo.setItemLabelGenerator(this::getCurrencyLabel);
+        combo.setAllowCustomValue(false);
     }
 
     private String getCurrencyLabel(Currency item) {
@@ -170,19 +171,19 @@ public class SymbolEditor extends CommonPopupEditor<SymbolViewModel> {
 
     private void initInstrumentTypeCombo() {
         symbolType.setItems(SymbolType.values());
-        // instrumentType.setFilteredItems(SymbolType.values());
         symbolType.setValue(SymbolType.STOCK);
         symbolType.setItemLabelGenerator(SymbolType::getDescription);
+        symbolType.setAllowCustomValue(false);
         symbolType.setRequired(true);
         symbolType.setWidth("33.33%");
     }
 
     private void initStockExchangeCombo() {
         stockExchange.setItems(StockExchange.values());
-        // stockExchange.setFilteredItems(StockExchange.values());
         stockExchange.setValue(StockExchange.UNKNOWN);
         stockExchange.setItemLabelGenerator(StockExchange::getName);
         stockExchange.setRequired(true);
+        stockExchange.setAllowCustomValue(false);
         stockExchange.setWidth("33.33%");
     }
 

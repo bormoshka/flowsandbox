@@ -15,30 +15,13 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.data.renderer.TemplateRenderer;
-import com.vaadin.flow.router.BeforeEnterEvent;
-import com.vaadin.flow.router.BeforeEvent;
-import com.vaadin.flow.router.BeforeLeaveEvent;
-import com.vaadin.flow.router.HasUrlParameter;
-import com.vaadin.flow.router.PageTitle;
-import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.WildcardParameter;
-import com.vaadin.flow.spring.annotation.SpringComponent;
-import com.vaadin.flow.spring.annotation.UIScope;
-
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-
+import com.vaadin.flow.router.*;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.springframework.beans.factory.annotation.Autowired;
 import ru.ulmc.investor.data.entity.LastPrice;
 import ru.ulmc.investor.event.dto.PriceUpdateEvent;
 import ru.ulmc.investor.event.listeners.Registration;
@@ -60,7 +43,12 @@ import ru.ulmc.investor.ui.view.information.editor.FullPositionEditor;
 import ru.ulmc.investor.ui.view.information.editor.OpenPositionEditor;
 import ru.ulmc.investor.user.Permission;
 
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
 import static ru.ulmc.investor.ui.util.RouterUtil.navigateTo;
 import static ru.ulmc.investor.ui.util.RouterUtil.unescapeParams;
 
@@ -81,6 +69,7 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
     private final StaticUpdateBroadcaster staticBroadcaster;
     private final Map<String, Collection<PositionViewModel>> perSymbolPositions = new ConcurrentHashMap<>();
     private final AtomicBoolean enableAutoUpdate = new AtomicBoolean();
+    private final AtomicBoolean useTreeGrid = new AtomicBoolean(true);
     private final Registration registration;
     private StocksService stocksService;
     private OpenPositionEditor openPositionEditor;
@@ -147,7 +136,7 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
                 statusFilter.setValue(PositionStatusFilter.valueOf(params.get(1)));
                 applyFilters(Long.valueOf(params.get(0)));
             } else {
-               // defaultSelect();
+                // defaultSelect();
             }
         }
     }
@@ -205,7 +194,7 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
 
     private void init() {
         initAutoUpdateCheckbox();
-        initGrid();
+        initGrid(useTreeGrid.get());
         initControlLayout();
         initMainLayout();
         loadPortfolioData();
@@ -215,18 +204,49 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
         List<PositionViewModel> positions = applyFilterByStatus(portfolioId);
         perSymbolPositions.clear();
         positions.forEach(this::addToPositionsMap);
-        grid.setItems(positions);
+        if (grid instanceof TreeGrid) {
+            ((TreeGrid<PositionViewModel>) grid).setItems(getRootItems(), this::getChildrenForTreeGrid);
+        } else {
+            grid.setItems(positions);
+        }
         sumResultComponent.update(positions);
         findAndUpdateLastPrice();
+    }
+
+    private Collection<PositionViewModel> getChildrenForTreeGrid(PositionViewModel p) {
+        if (!p.isParent()) {
+            return emptyList();
+        }
+        return perSymbolPositions.get(p.getSymbol().getCode());
     }
 
     private boolean addToPositionsMap(PositionViewModel pos) {
         return perSymbolPositions.computeIfAbsent(pos.getStockCode(), s -> new HashSet<>()).add(pos);
     }
 
-    private void initGrid() {
-        grid = new Grid<>();
+    private List<PositionViewModel> getRootItems() {
+        return perSymbolPositions.values().stream()
+                .map(PositionViewModel::makeParentFrom)
+                .collect(toList());
+    }
+
+    private void initGrid(boolean useTreeGrid) {
+        if (useTreeGrid) {
+            TreeGrid<PositionViewModel> treeGrid = new TreeGrid<>();
+            treeGrid.addHierarchyColumn(vm -> "")
+                    .setFlexGrow(0)
+                    .setHeader("");
+            grid = treeGrid;
+        } else {
+            grid = new Grid<>();
+
+        }
+        commonGridSetup();
+    }
+
+    private void commonGridSetup() {
         grid.setSizeFull();
+
         val nameCol = grid.addColumn(getNameRenderer())
                 .setFlexGrow(10)
                 .setHeader("Название");

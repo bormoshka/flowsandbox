@@ -7,14 +7,15 @@ import ru.ulmc.investor.data.entity.LastPrice;
 import ru.ulmc.investor.data.entity.Position;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collection;
 import java.util.Optional;
 
 import static java.math.BigDecimal.ZERO;
 import static java.math.BigDecimal.valueOf;
-import static ru.ulmc.investor.ui.entity.ProfitStatus.*;
 
 @Getter
 @Setter
@@ -28,6 +29,7 @@ public class PositionViewModel {
     private PortfolioLightModel portfolio;
     private SymbolViewModel symbol;
     private int quantity;
+    private int quantityClosed;
     private LocalDateTime openDate;
     private LocalDateTime closeDate;
     private BigDecimal openPrice;
@@ -37,11 +39,54 @@ public class PositionViewModel {
 
     private BigDecimal marketPrice;
     private boolean closed;
+    @Builder.Default
+    private boolean parent = false;
 
     public static PositionViewModel of(Pair<Position, Optional<LastPrice>> positionToLastPrice) {
         PositionViewModel model = of(positionToLastPrice.getKey());
         positionToLastPrice.getValue().ifPresent(lp -> model.setMarketPrice(lp.getLastPrice()));
         return model;
+    }
+
+    public static PositionViewModel makeParentFrom(@NonNull Collection<PositionViewModel> children) {
+        PositionViewModel firstChild = null;
+        BigDecimal midOpenPrice = ZERO;
+        BigDecimal midClosePrice = ZERO;
+        int countOpen = 0;
+        int countClosed = 0;
+        int midCount = 0;
+        int midCloseCount = 0;
+        for (PositionViewModel child : children) {
+            if (firstChild == null) {
+                firstChild = child;
+            }
+            if (child.isClosed()) {
+                countClosed += child.getQuantityClosed();
+                midClosePrice = calcMid(midClosePrice, child.getClosePrice(), ++midCloseCount);
+            } else {
+                countOpen += child.getQuantity();
+            }
+            midOpenPrice = calcMid(midOpenPrice, child.getOpenPrice(), ++midCount);
+        }
+        return PositionViewModel.builder()
+                .id(-1L)
+                .comment("Parent node")
+                .portfolio(firstChild.getPortfolio())
+                .symbol(firstChild.getSymbol())
+                .quantity(countOpen)
+                .quantityClosed(countClosed)
+                .openDate(firstChild.getOpenDate())
+                .closeDate(firstChild.getCloseDate())
+                .openPrice(midOpenPrice)
+                .closePrice(midClosePrice)
+                .closed(countOpen == countClosed)
+                .parent(true)
+                .build();
+    }
+
+    private static BigDecimal calcMid(BigDecimal midOpenPrice, BigDecimal nextPrice, int val) {
+        BigDecimal right = nextPrice.subtract(midOpenPrice).divide(valueOf(val), RoundingMode.HALF_UP);
+        return midOpenPrice.add(right);
     }
 
     public static PositionViewModel of(Position position) {
@@ -51,6 +96,7 @@ public class PositionViewModel {
                 .portfolio(PortfolioLightModel.of(position.getPortfolio()))
                 .symbol(SymbolViewModel.of(position.getSymbol()))
                 .quantity(position.getQuantity())
+                .quantityClosed(position.getCloseDate() != null ? position.getQuantity() : 0)
                 .openDate(position.getOpenDate())
                 .closeDate(position.getCloseDate())
                 .openPrice(position.getOpenPrice())
