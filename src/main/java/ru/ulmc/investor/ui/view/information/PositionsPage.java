@@ -10,7 +10,6 @@ import com.vaadin.flow.component.dependency.HtmlImport;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.dialog.GeneratedVaadinDialog;
 import com.vaadin.flow.component.grid.FooterRow;
-import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -69,11 +68,10 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
     private final StaticUpdateBroadcaster staticBroadcaster;
     private final Map<String, Collection<PositionViewModel>> perSymbolPositions = new ConcurrentHashMap<>();
     private final AtomicBoolean enableAutoUpdate = new AtomicBoolean();
-    private final AtomicBoolean useTreeGrid = new AtomicBoolean(true);
     private final Registration registration;
     private StocksService stocksService;
     private OpenPositionEditor openPositionEditor;
-    private Grid<PositionViewModel> grid;
+    private TreeGrid<PositionViewModel> grid;
     private HorizontalLayout controlsLayout;
     private ComboBox<PortfolioLightModel> portfolioComboBox;
     private ComboBox<PositionStatusFilter> statusFilter;
@@ -194,7 +192,7 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
 
     private void init() {
         initAutoUpdateCheckbox();
-        initGrid(useTreeGrid.get());
+        initGrid();
         initControlLayout();
         initMainLayout();
         loadPortfolioData();
@@ -204,11 +202,8 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
         List<PositionViewModel> positions = applyFilterByStatus(portfolioId);
         perSymbolPositions.clear();
         positions.forEach(this::addToPositionsMap);
-        if (grid instanceof TreeGrid) {
-            ((TreeGrid<PositionViewModel>) grid).setItems(getRootItems(), this::getChildrenForTreeGrid);
-        } else {
-            grid.setItems(positions);
-        }
+        grid.setItems(getRootItems(), this::getChildrenForTreeGrid);
+
         sumResultComponent.update(positions);
         findAndUpdateLastPrice();
     }
@@ -230,21 +225,11 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
                 .collect(toList());
     }
 
-    private void initGrid(boolean useTreeGrid) {
-        if (useTreeGrid) {
-            TreeGrid<PositionViewModel> treeGrid = new TreeGrid<>();
-            treeGrid.addHierarchyColumn(vm -> "")
-                    .setFlexGrow(0)
-                    .setHeader("");
-            grid = treeGrid;
-        } else {
-            grid = new Grid<>();
-
-        }
-        commonGridSetup();
-    }
-
-    private void commonGridSetup() {
+    private void initGrid() {
+        grid = new TreeGrid<>();
+        grid.addHierarchyColumn(vm -> "")
+                .setFlexGrow(0)
+                .setHeader("");
         grid.setSizeFull();
 
         val nameCol = grid.addColumn(getNameRenderer())
@@ -371,14 +356,6 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
     }
 
     private Component createRowControls(PositionViewModel pvm) {
-        Button editBtn = new Button(new Icon(VaadinIcon.PENCIL));
-        editBtn.addClickListener(buttonClickEvent -> {
-            if (pvm.isClosed()) {
-                fullPositionEditor.edit(pvm);
-            } else {
-                openPositionEditor.edit(pvm);
-            }
-        });
         HorizontalLayout hl = new HorizontalLayout();
         hl.setSizeFull();
         if (!pvm.isClosed()) {
@@ -387,7 +364,17 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
             closePositionBtn.addClickListener(buttonClickEvent -> closedPositionEditor.edit(pvm));
             hl.add(closePositionBtn);
         }
-        hl.add(editBtn);
+        if (!pvm.isParent()) {
+            Button editBtn = new Button(new Icon(VaadinIcon.PENCIL));
+            editBtn.addClickListener(buttonClickEvent -> {
+                if (pvm.isClosed()) {
+                    fullPositionEditor.edit(pvm);
+                } else {
+                    openPositionEditor.edit(pvm);
+                }
+            });
+            hl.add(editBtn);
+        }
         hl.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
         return hl;
     }

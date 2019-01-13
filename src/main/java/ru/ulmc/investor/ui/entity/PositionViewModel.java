@@ -49,11 +49,14 @@ public class PositionViewModel {
     }
 
     public static PositionViewModel makeParentFrom(@NonNull Collection<PositionViewModel> children) {
+        if(children.isEmpty()) {
+            throw new IllegalArgumentException("Children cannot be empty!");
+        }
         PositionViewModel firstChild = null;
         BigDecimal midOpenPrice = ZERO;
         BigDecimal midClosePrice = ZERO;
-        int countOpen = 0;
-        int countClosed = 0;
+        int totalQuantity = 0;
+        int closedQuantity = 0;
         int midCount = 0;
         int midCloseCount = 0;
         for (PositionViewModel child : children) {
@@ -61,11 +64,10 @@ public class PositionViewModel {
                 firstChild = child;
             }
             if (child.isClosed()) {
-                countClosed += child.getQuantityClosed();
+                closedQuantity += child.getQuantityClosed();
                 midClosePrice = calcMid(midClosePrice, child.getClosePrice(), ++midCloseCount);
-            } else {
-                countOpen += child.getQuantity();
             }
+            totalQuantity += child.getQuantity();
             midOpenPrice = calcMid(midOpenPrice, child.getOpenPrice(), ++midCount);
         }
         return PositionViewModel.builder()
@@ -73,13 +75,14 @@ public class PositionViewModel {
                 .comment("Parent node")
                 .portfolio(firstChild.getPortfolio())
                 .symbol(firstChild.getSymbol())
-                .quantity(countOpen)
-                .quantityClosed(countClosed)
+                .quantity(totalQuantity)
+                .quantityClosed(closedQuantity)
                 .openDate(firstChild.getOpenDate())
                 .closeDate(firstChild.getCloseDate())
                 .openPrice(midOpenPrice)
                 .closePrice(midClosePrice)
-                .closed(countOpen == countClosed)
+                .currencyOpenPrice(ZERO)
+                .closed(totalQuantity == closedQuantity)
                 .parent(true)
                 .build();
     }

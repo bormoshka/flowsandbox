@@ -13,6 +13,7 @@ import ru.ulmc.investor.ui.entity.*;
 import java.util.List;
 import java.util.Optional;
 import java.util.Spliterator;
+import java.util.function.Function;
 
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
@@ -66,18 +67,17 @@ public class StocksService {
     }
 
     public List<PortfolioViewModel> getAllPortfolios() {
-        Spliterator<Portfolio> spliterator = portfolioRepository.findAll().spliterator();
-        List<PortfolioViewModel> portfolioList = stream(spliterator, false)
-                .map(PortfolioViewModel::of)
-                .collect(toList());
-        log.debug("Getting all portfolios, found {}", portfolioList.size());
-        return portfolioList;
+        return getPortfolio(PortfolioViewModel::of);
     }
 
     public List<PortfolioLightModel> getAllPortfoliosInfo() {
+        return getPortfolio(PortfolioLightModel::of);
+    }
+
+    private <T> List<T> getPortfolio(Function<Portfolio, T> mapper) {
         Spliterator<Portfolio> spliterator = portfolioRepository.findAll().spliterator();
-        List<PortfolioLightModel> portfolioList = stream(spliterator, false)
-                .map(PortfolioLightModel::of)
+        List<T> portfolioList = stream(spliterator, false)
+                .map(mapper)
                 .collect(toList());
         log.debug("Getting all portfolios, found {}", portfolioList.size());
         return portfolioList;
@@ -129,6 +129,21 @@ public class StocksService {
             positionRepository.save(open);
             positionRepository.save(closed);
         }
+    }
+
+    @Transactional
+    public void closeAll(Position closedPositionStats) {
+        log.debug("Trying to close all positions {} by symbol", closedPositionStats);
+        Long portfolioId = closedPositionStats.getPortfolio().getId();
+        Symbol symbol = closedPositionStats.getSymbol();
+        List<Position> all = positionRepository.findAllByPortfolio_IdAndSymbolAndClosedFalse(portfolioId, symbol);
+        all.forEach(position -> {
+            position.setClosed(true);
+            position.setCloseDate(closedPositionStats.getCloseDate());
+            position.setClosePrice(closedPositionStats.getClosePrice());
+            position.setCurrencyClosePrice(closedPositionStats.getCurrencyClosePrice());
+        });
+        positionRepository.saveAll(all);
     }
 
     public Position save(Position model) {

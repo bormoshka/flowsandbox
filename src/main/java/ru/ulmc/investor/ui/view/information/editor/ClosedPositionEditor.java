@@ -6,14 +6,12 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
-import com.vaadin.flow.spring.annotation.UIScope;
-
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.context.annotation.Scope;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
+import ru.ulmc.investor.data.entity.Position;
 import ru.ulmc.investor.service.StocksService;
 import ru.ulmc.investor.ui.MainLayout;
 import ru.ulmc.investor.ui.entity.PositionViewModel;
@@ -52,16 +50,27 @@ public class ClosedPositionEditor extends FullPositionEditor {
     @Override
     protected void onSave(PositionViewModel bean) {
         bean.setClosed(true);
-        String text = "Позиция \"" + bean.getSymbol().getName();
+        String text = doClosePosition(bean);
+        Notification.show(text, 2500, Notification.Position.MIDDLE);
+    }
+
+    private String doClosePosition(PositionViewModel bean) {
+        Position entity = toEntity(bean);
+        String symName = bean.getSymbol().getName();
+        if (bean.isParent()) {
+            stocksService.closeAll(entity);
+            return "Все позиции " + symName + " были успешно закрыты!";
+        }
+        String text = "Позиция \"" + symName;
         if (bean.getQuantity() == originalModel.getQuantity()) {
             text += "\" успешно закрыта!";
             bean.setId(originalModel.getId());
-            stocksService.save(toEntity(bean));
+            stocksService.save(entity);
         } else {
             text += "\" успешно частично закрыта!";
-            stocksService.closeFractionally(toEntity(originalModel), toEntity(bean));
+            stocksService.closeFractionally(toEntity(originalModel), entity);
         }
-        Notification.show(text, 2500, Notification.Position.MIDDLE);
+        return text;
     }
 
     @Override
@@ -96,6 +105,12 @@ public class ClosedPositionEditor extends FullPositionEditor {
         this.originalModel = model;
         init();
         onEdit(copy);
+        if(model.isParent()) {
+            closeTypeComboBox.setValue(CloseType.ALL);
+            closeTypeComboBox.setEnabled(false);
+        } else {
+            closeTypeComboBox.setEnabled(true);
+        }
     }
 
     @AllArgsConstructor
