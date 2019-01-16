@@ -1,0 +1,40 @@
+<link rel="import" href="../../bower_components/vaadin-lumo-styles/color.html">
+<link rel="import" href="../../bower_components/vaadin-lumo-styles/typography.html">
+
+<dom-module id="price-change">
+    <template>
+        <style>
+            .price-change .price-change__growth-true {
+                color: var(--lumo-success-color);
+            }
+
+            .price-change .price-change__growth-false {
+                color: var(--lumo-error-color);
+            }
+
+            .price-change .price-change__subtext {
+                font-size: var(--lumo-font-size-xs);
+            }
+
+            .price-change__icon {
+                width: 12px;
+                height: 12px;
+            }
+        </style>
+        <div>
+            <span class$='price-change__growth-[[price.dayGrowth]]'>[[price.dayChange]]</span> |
+            <span class$='price-change__growth-[[price.weekGrowth]]'>[[price.weekChange]]</span> |
+            <span class$='price-change__growth-[[price.monthGrowth]]'>[[price.monthChange]]</span>
+        </div>
+    </template>
+
+    <script>
+        class PriceChange extends Polymer.Element {
+            static get is() {
+                return 'price-change';
+            }
+        }
+
+        window.customElements.define(PriceChange.is, PriceChange);
+    </script>
+</dom-module>

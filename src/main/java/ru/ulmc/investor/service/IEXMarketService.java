@@ -8,12 +8,17 @@ import org.springframework.stereotype.Service;
 
 import pl.zankowski.iextrading4j.api.exception.IEXTradingException;
 import pl.zankowski.iextrading4j.api.marketdata.LastTrade;
+import pl.zankowski.iextrading4j.api.stocks.Chart;
+import pl.zankowski.iextrading4j.api.stocks.ChartRange;
 import pl.zankowski.iextrading4j.api.stocks.Company;
+import pl.zankowski.iextrading4j.api.stocks.KeyStats;
 import pl.zankowski.iextrading4j.api.stocks.Quote;
 import pl.zankowski.iextrading4j.client.IEXTradingClient;
 import pl.zankowski.iextrading4j.client.rest.manager.RestRequest;
 import pl.zankowski.iextrading4j.client.rest.request.marketdata.LastTradeRequestBuilder;
+import pl.zankowski.iextrading4j.client.rest.request.stocks.ChartRequestBuilder;
 import pl.zankowski.iextrading4j.client.rest.request.stocks.CompanyRequestBuilder;
+import pl.zankowski.iextrading4j.client.rest.request.stocks.KeyStatsRequestBuilder;
 import pl.zankowski.iextrading4j.client.rest.request.stocks.QuoteRequestBuilder;
 import pl.zankowski.iextrading4j.client.socket.request.marketdata.LastAsyncRequestBuilder;
 
@@ -29,9 +34,11 @@ import javax.annotation.PreDestroy;
 
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import ru.ulmc.investor.data.entity.HistoryPrice;
 import ru.ulmc.investor.data.entity.InnerQuote;
 import ru.ulmc.investor.data.entity.LastPrice;
 import ru.ulmc.investor.service.convert.IEXMarketConverter;
+import ru.ulmc.investor.service.dto.KeyStatsDto;
 
 @Slf4j
 @Service
@@ -95,12 +102,45 @@ public class IEXMarketService implements ExternalMarketService {
      */
     @Override
     public void subscribeForLastTrade(Collection<String> symbols,
-            Consumer<LastPrice> lastTradeConsumer) {
+                                      Consumer<LastPrice> lastTradeConsumer) {
         LastAsyncRequestBuilder requestBuilder = new LastAsyncRequestBuilder();
         symbols.forEach(requestBuilder::withSymbol);
 
         tradingClient.subscribe(requestBuilder.build(),
                 trade -> lastTradeConsumer.accept(converter.convert(trade)));
+    }
+
+    @Async
+    public void getKeyStats(String symbol, Consumer<KeyStatsDto> priceConsumer) {
+        KeyStats response = executeKeyStatsRequest(symbol);
+        priceConsumer.accept(converter.convert(response));
+    }
+
+    @Async
+    public void getLastMonthHistoryData(String symbol, Consumer<Collection<HistoryPrice>> priceConsumer) {
+        List<Chart> charts = executeChartRequest(symbol, ChartRange.ONE_MONTH);
+        priceConsumer.accept(converter.convert(symbol, charts));
+    }
+
+    private KeyStats executeKeyStatsRequest(String symbol) {
+        RestRequest<KeyStats> request = new KeyStatsRequestBuilder()
+                .withSymbol(symbol)
+                .build();
+
+        KeyStats stats = tradingClient.executeRequest(request);
+        log.trace("Incoming stats request {}", stats);
+        return stats;
+    }
+
+    private List<Chart> executeChartRequest(String symbol, ChartRange chartRange) {
+        RestRequest<List<Chart>> request = new ChartRequestBuilder()
+                .withSymbol(symbol)
+                .withChartRange(chartRange)
+                .build();
+
+        List<Chart> charts = tradingClient.executeRequest(request);
+        log.trace("Incoming charts request {}", charts);
+        return charts;
     }
 
     private Quote executeQuoteRequest(String symbol) {

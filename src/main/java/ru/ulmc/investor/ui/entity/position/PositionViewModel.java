@@ -1,11 +1,6 @@
 package ru.ulmc.investor.ui.entity.position;
 
-import lombok.*;
 import org.apache.commons.lang3.tuple.Pair;
-import ru.ulmc.investor.data.entity.LastPrice;
-import ru.ulmc.investor.data.entity.Position;
-import ru.ulmc.investor.ui.entity.PortfolioLightModel;
-import ru.ulmc.investor.ui.entity.SymbolViewModel;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -14,6 +9,17 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.Optional;
+
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
+import lombok.ToString;
+import ru.ulmc.investor.data.entity.LastPrice;
+import ru.ulmc.investor.data.entity.Position;
+import ru.ulmc.investor.ui.entity.PortfolioLightModel;
+import ru.ulmc.investor.ui.entity.SymbolViewModel;
 
 import static java.math.BigDecimal.ZERO;
 import static java.math.BigDecimal.valueOf;
@@ -37,6 +43,8 @@ public class PositionViewModel {
     private BigDecimal currencyOpenPrice;
     private BigDecimal closePrice;
     private BigDecimal currencyClosePrice;
+    @Builder.Default
+    private PriceChange priceChange = PriceChange.empty;
 
     private BigDecimal marketPrice;
     private boolean closed;
@@ -50,7 +58,7 @@ public class PositionViewModel {
     }
 
     public static PositionViewModel makeParentFrom(@NonNull Collection<PositionViewModel> children) {
-        if(children.isEmpty()) {
+        if (children.isEmpty()) {
             throw new IllegalArgumentException("Children cannot be empty!");
         }
         PositionViewModel firstChild = null;
@@ -175,7 +183,6 @@ public class PositionViewModel {
     public String getCloseDateFormatted() {
         return closeDate == null ? null : df.format(closeDate);
     }
-
 
     public String getOpenPeriod() {
         return closeDate == null ? "0" : getOpenPeriodUnsafe();

@@ -1,20 +1,36 @@
 package ru.ulmc.investor.service;
 
-import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.ulmc.investor.data.entity.*;
-import ru.ulmc.investor.data.repository.*;
-import ru.ulmc.investor.ui.entity.*;
-import ru.ulmc.investor.ui.entity.position.PositionViewModel;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Spliterator;
 import java.util.function.Function;
+
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import ru.ulmc.investor.data.entity.Broker;
+import ru.ulmc.investor.data.entity.HistoryPrice;
+import ru.ulmc.investor.data.entity.HistoryPrice.HistoryPriceId;
+import ru.ulmc.investor.data.entity.LastPrice;
+import ru.ulmc.investor.data.entity.Portfolio;
+import ru.ulmc.investor.data.entity.Position;
+import ru.ulmc.investor.data.entity.Symbol;
+import ru.ulmc.investor.data.repository.BrokerRepository;
+import ru.ulmc.investor.data.repository.HistoryPriceRepository;
+import ru.ulmc.investor.data.repository.LastPriceRepository;
+import ru.ulmc.investor.data.repository.PortfolioRepository;
+import ru.ulmc.investor.data.repository.PositionRepository;
+import ru.ulmc.investor.data.repository.StockRepository;
+import ru.ulmc.investor.ui.entity.BrokerLightModel;
+import ru.ulmc.investor.ui.entity.PortfolioLightModel;
+import ru.ulmc.investor.ui.entity.PortfolioViewModel;
+import ru.ulmc.investor.ui.entity.SymbolViewModel;
+import ru.ulmc.investor.ui.entity.position.PositionViewModel;
 
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
@@ -29,18 +45,21 @@ public class StocksService {
     private final BrokerRepository brokerRepository;
     private final StockRepository stockRepository;
     private final LastPriceRepository lastPriceRepository;
+    private final HistoryPriceRepository historyPriceRepository;
 
     @Autowired
     public StocksService(PortfolioRepository portfolioRepository,
                          PositionRepository positionRepository,
                          BrokerRepository brokerRepository,
                          StockRepository stockRepository,
-                         LastPriceRepository lastPriceRepository) {
+                         LastPriceRepository lastPriceRepository,
+                         HistoryPriceRepository historyPriceRepository) {
         this.portfolioRepository = portfolioRepository;
         this.positionRepository = positionRepository;
         this.brokerRepository = brokerRepository;
         this.stockRepository = stockRepository;
         this.lastPriceRepository = lastPriceRepository;
+        this.historyPriceRepository = historyPriceRepository;
     }
 
     public List<SymbolViewModel> getStockPositions() {
@@ -85,15 +104,18 @@ public class StocksService {
     }
 
     public List<PositionViewModel> getAllOpenPositions(long portfolioId) {
-        return toPositionViewModelAlt(positionRepository.findAllByClosedFalseAndPortfolio_Id(portfolioId));
+        List<Position> dbModels = positionRepository.findAllByClosedFalseAndPortfolio_Id(portfolioId);
+        return toPositionViewModelAlt(dbModels);
     }
 
     public List<PositionViewModel> getClosedPositions(long portfolioId) {
-        return toPositionViewModelAlt(positionRepository.findAllByClosedTrueAndPortfolio_Id(portfolioId));
+        List<Position> dbModels = positionRepository.findAllByClosedTrueAndPortfolio_Id(portfolioId);
+        return toPositionViewModelAlt(dbModels);
     }
 
     public List<PositionViewModel> getAllPositions(long portfolioId) {
-        return toPositionViewModelAlt(positionRepository.findAllByPortfolio_Id(portfolioId));
+        List<Position> dbModels = positionRepository.findAllByPortfolio_Id(portfolioId);
+        return toPositionViewModelAlt(dbModels);
     }
 
     public void removePortfolio(long portfolioId) {
@@ -174,7 +196,14 @@ public class StocksService {
         return brokerRepository.save(model);
     }
 
-    public Optional<LastPrice> findLastPrice(String stockCode) {
+    private Optional<HistoryPrice> findHistoryPrices(LocalDate date, String symbol) {
+        return historyPriceRepository.findById(HistoryPriceId.builder()
+                .date(date)
+                .symbol(symbol)
+                .build());
+    }
+
+    private Optional<LastPrice> findLastPrice(String stockCode) {
         return ofNullable(lastPriceRepository.findFirstBySymbolOrderByDateTimeDesc(stockCode));
     }
 

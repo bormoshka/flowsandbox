@@ -7,8 +7,10 @@ import java.util.Optional;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
+import ru.ulmc.investor.data.entity.HistoryPrice;
 import ru.ulmc.investor.data.entity.InnerQuote;
 import ru.ulmc.investor.data.entity.LastPrice;
+import ru.ulmc.investor.service.dto.KeyStatsDto;
 
 public interface ExternalMarketService {
 
@@ -21,4 +23,8 @@ public interface ExternalMarketService {
     Optional<Company> getCompany(String symbol);
 
     void subscribeForLastTrade(Collection<String> symbols, Consumer<LastPrice> lastTradeConsumer);
+
+    void getLastMonthHistoryData(String symbol, Consumer<Collection<HistoryPrice>> priceConsumer);
+
+    void getKeyStats(String symbol, Consumer<KeyStatsDto> priceConsumer);
 }

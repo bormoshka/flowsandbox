@@ -241,10 +241,10 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
         grid.addColumn(PositionViewModel::getQuantity)
                 .setFlexGrow(5)
                 .setHeader("Размер");
-        grid.addColumn(getPriceRenderer())
+        grid.addColumn(getProfitRenderer())
                 .setFlexGrow(5)
                 .setHeader("Неделя");
-        grid.addColumn(getPriceRenderer())
+        grid.addColumn(getProfitRenderer())
                 .setFlexGrow(5)
                 .setHeader("Цена");
         val sumCol = grid.addColumn(getSumRenderer())
@@ -303,8 +303,13 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
                 .withProperty("position", p -> p);
     }
 
-    private Renderer<PositionViewModel> getPriceRenderer() {
+    private Renderer<PositionViewModel> getProfitRenderer() {
         return TemplateRenderer.<PositionViewModel>of("<position-profit position='[[item.prices]]'></position-profit>")
+                .withProperty("prices", PositionViewModel::getPrices);
+    }
+
+    private Renderer<PositionViewModel> getChangeRenderer() {
+        return TemplateRenderer.<PositionViewModel>of("<price-change price='[[item.prices]]'></price-change>")
                 .withProperty("prices", PositionViewModel::getPrices);
     }
 
