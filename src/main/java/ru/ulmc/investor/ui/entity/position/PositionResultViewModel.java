@@ -1,4 +1,4 @@
-package ru.ulmc.investor.ui.entity;
+package ru.ulmc.investor.ui.entity.position;
 
 import com.vaadin.flow.templatemodel.Encode;
 import com.vaadin.flow.templatemodel.TemplateModel;

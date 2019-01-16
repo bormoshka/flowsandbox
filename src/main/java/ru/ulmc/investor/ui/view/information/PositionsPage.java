@@ -31,7 +31,7 @@ import ru.ulmc.investor.service.UserService;
 import ru.ulmc.investor.ui.MainLayout;
 import ru.ulmc.investor.ui.entity.CommonLightModel;
 import ru.ulmc.investor.ui.entity.PortfolioLightModel;
-import ru.ulmc.investor.ui.entity.PositionViewModel;
+import ru.ulmc.investor.ui.entity.position.PositionViewModel;
 import ru.ulmc.investor.ui.util.Notify;
 import ru.ulmc.investor.ui.util.PageParams;
 import ru.ulmc.investor.ui.util.PositionStatusFilter;
@@ -243,6 +243,9 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
                 .setHeader("Размер");
         grid.addColumn(getPriceRenderer())
                 .setFlexGrow(5)
+                .setHeader("Неделя");
+        grid.addColumn(getPriceRenderer())
+                .setFlexGrow(5)
                 .setHeader("Цена");
         val sumCol = grid.addColumn(getSumRenderer())
                 .setFlexGrow(5)
@@ -338,9 +341,7 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
     private void initAddButton() {
         addBtn = new Button("Добавить", new Icon(VaadinIcon.PLUS));
         addBtn.setEnabled(false);
-        addBtn.addClickListener(buttonClickEvent -> {
-            openPositionEditor.create(portfolioComboBox.getValue());
-        });
+        addBtn.addClickListener(event -> openPositionEditor.create(portfolioComboBox.getValue()));
     }
 
     private void initControlsLayout() {

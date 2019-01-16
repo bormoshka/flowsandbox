@@ -1,10 +1,11 @@
-package ru.ulmc.investor.ui.entity;
+package ru.ulmc.investor.ui.entity.position;
 
-import com.vaadin.flow.templatemodel.TemplateModel;
 import lombok.*;
 import org.apache.commons.lang3.tuple.Pair;
 import ru.ulmc.investor.data.entity.LastPrice;
 import ru.ulmc.investor.data.entity.Position;
+import ru.ulmc.investor.ui.entity.PortfolioLightModel;
+import ru.ulmc.investor.ui.entity.SymbolViewModel;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -198,118 +199,5 @@ public class PositionViewModel {
         } else {
             return days + " д.";
         }
-
-    }
-
-    @NoArgsConstructor
-    public static class PositionTotal extends PositionPrice {
-        public PositionTotal(PositionViewModel model) {
-            super(model);
-        }
-
-        @Override
-        public BigDecimal getOpen() {
-            return model.getOpenPrice().multiply(getSize());
-        }
-
-        @Override
-        public BigDecimal getClose() {
-            if (model.getClosePrice() == null) {
-                return null;
-            }
-            return model.getClosePrice().multiply(getSize());
-        }
-
-        @Override
-        public BigDecimal getMarket() {
-            if (isLastPriceInitialized()) {
-                return model.marketPrice.multiply(getSize());
-            }
-            return ZERO;
-        }
-
-    }
-
-    @NoArgsConstructor
-    public static class PositionPrice implements TemplateModel {
-        PositionViewModel model;
-
-        public PositionPrice(PositionViewModel model) {
-            this.model = model;
-        }
-
-        public String getBaseCurrency() {
-            return model.getBaseCurrency();
-        }
-
-        public boolean isClosed() {
-            return model.isClosed();
-        }
-
-        public boolean isLastPriceInitialized() {
-            return model.marketPrice != null;
-        }
-
-        public boolean isOpenWithMarket() {
-            return !isClosed() && isLastPriceInitialized();
-        }
-
-        public BigDecimal getOpen() {
-            return model.getOpenPrice();
-        }
-
-        public BigDecimal getClose() {
-            return model.getClosePrice();
-        }
-
-        public BigDecimal getMarket() {
-            return model.marketPrice;
-        }
-
-        public BigDecimal getProfitPercents() {
-            if (isClosed() || isLastPriceInitialized()) {
-                return getProfit().multiply(valueOf(100))
-                        .divide(this.getOpen().multiply(getSize()), 2, BigDecimal.ROUND_HALF_UP);
-            } else {
-                return ZERO;
-            }
-
-        }
-
-        BigDecimal getSize() {
-            return valueOf(model.quantity);
-        }
-
-        public BigDecimal getProfit() {
-            if (isClosed()) {
-                return getClose().subtract(getOpen())/*.multiply(getSize())*/;
-            } else if (isLastPriceInitialized()) {
-                return getMarket().subtract(getOpen())/*.multiply(getSize())*/;
-            } else {
-                return ZERO;
-            }
-        }
-
-        public boolean isProfitable() {
-            if (isClosed()) {
-                return getOpen().compareTo(getClose()) < 0;
-            } else if (isLastPriceInitialized()) {
-                return getOpen().compareTo(getMarket()) < 0;
-            } else {
-                return false;
-            }
-        }
-
-        public String getTrending() {
-            return isProfitable() ? "up" : "down";
-        }
-
-       /* public String getProfitStatus() {
-            if (isClosed() || isOpenWithMarket()) {
-                return isProfitable() ? LOSS.getDesc() : PROFIT.getDesc();
-            } else {
-                return NEUTRAL.getDesc();
-            }
-        }*/
     }
 }

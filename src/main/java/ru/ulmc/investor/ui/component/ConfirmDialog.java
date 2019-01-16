@@ -17,10 +17,9 @@ public class ConfirmDialog extends Dialog {
             onProceed.run();
             close();
         });
+
         Button cancel = new Button("Отмена");
-        cancel.addClickListener(e -> {
-            close();
-        });
+        cancel.addClickListener(e -> close());
         HorizontalLayout hl = new HorizontalLayout(confirm, cancel);
         add(new VerticalLayout(new Label(text), hl));
         addDialogCloseActionListener(dialogCloseActionEvent -> {

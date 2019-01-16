@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.ulmc.investor.data.entity.*;
 import ru.ulmc.investor.data.repository.*;
 import ru.ulmc.investor.ui.entity.*;
+import ru.ulmc.investor.ui.entity.position.PositionViewModel;
 
 import java.util.List;
 import java.util.Optional;

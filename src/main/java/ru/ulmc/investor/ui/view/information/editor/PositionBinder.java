@@ -7,20 +7,15 @@ import com.vaadin.flow.data.binder.Validator;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import ru.ulmc.investor.ui.entity.SymbolViewModel;
-import ru.ulmc.investor.ui.entity.PositionViewModel;
+import ru.ulmc.investor.ui.entity.position.PositionViewModel;
 
 import java.math.BigDecimal;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-import static java.lang.ThreadLocal.withInitial;
 import static java.time.LocalDateTime.now;
 import static ru.ulmc.investor.ui.util.Format.BIG_DECIMAL_FORMAT;
 import static ru.ulmc.investor.ui.util.Format.HOURS_MINUTES_FORMATTER;
