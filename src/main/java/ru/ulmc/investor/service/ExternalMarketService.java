@@ -3,6 +3,7 @@ package ru.ulmc.investor.service;
 import pl.zankowski.iextrading4j.api.stocks.Company;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
@@ -16,6 +17,8 @@ public interface ExternalMarketService {
 
     void getLastPriceAsync(Collection<String> symbols, Consumer<Collection<LastPrice>> quoteConsumer);
 
+    Collection<LastPrice> getLastPrice(Collection<String> symbols);
+
     Future<InnerQuote> getQuoteAsync(String symbol);
 
     void getQuoteAsync(String symbol, Consumer<InnerQuote> quoteConsumer);
@@ -26,5 +29,7 @@ public interface ExternalMarketService {
 
     void getLastMonthHistoryData(String symbol, Consumer<Collection<HistoryPrice>> priceConsumer);
 
-    void getKeyStats(String symbol, Consumer<KeyStatsDto> priceConsumer);
+    List<KeyStatsDto> getKeyStats(Collection<String> symbols);
+
+    void getKeyStatsAsync(Collection<String> symbols, Consumer<Collection<KeyStatsDto>> resultConsumer);
 }

@@ -3,6 +3,7 @@ package ru.ulmc.investor.ui.view.information;
 import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.UIDetachedException;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -17,10 +18,28 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.data.renderer.TemplateRenderer;
-import com.vaadin.flow.router.*;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEvent;
+import com.vaadin.flow.router.BeforeLeaveEvent;
+import com.vaadin.flow.router.HasUrlParameter;
+import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.WildcardParameter;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.springframework.beans.factory.annotation.Autowired;
 import ru.ulmc.investor.data.entity.LastPrice;
 import ru.ulmc.investor.event.dto.PriceUpdateEvent;
 import ru.ulmc.investor.event.listeners.Registration;
@@ -42,10 +61,6 @@ import ru.ulmc.investor.ui.view.information.editor.FullPositionEditor;
 import ru.ulmc.investor.ui.view.information.editor.OpenPositionEditor;
 import ru.ulmc.investor.user.Permission;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static ru.ulmc.investor.ui.util.RouterUtil.navigateTo;
@@ -56,6 +71,7 @@ import static ru.ulmc.investor.ui.util.RouterUtil.unescapeParams;
 @HtmlImport("frontend://src/position/position-name-cell.html")
 @HtmlImport("frontend://src/position/position-date.html")
 @HtmlImport("frontend://src/position/position-profit.html")
+@HtmlImport("frontend://src/position/price-change.html")
 @TopLevelPage(menuName = "Позиции", order = 3)
 @Route(value = "positions", layout = MainLayout.class)
 public class PositionsPage extends CommonPage implements HasUrlParameter<String> {
@@ -145,10 +161,14 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
             registration.unregister();
             return;
         }
-        currentUi.access(() -> {
-            lastPrices.forEach(this::updateLastPrice);
-            Notify.fastToast("Price update event received"); //debug purpose
-        });
+        try {
+            currentUi.access(() -> {
+                lastPrices.forEach(this::updateLastPrice);
+                Notify.fastToast("Price update event received"); //debug purpose
+            });
+        } catch (UIDetachedException ex) {
+            registration.unregister();
+        }
     }
 
     private void onEditorStateChange(GeneratedVaadinDialog.OpenedChangeEvent<Dialog> event) {
@@ -158,14 +178,48 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
     }
 
     private void findAndUpdateLastPrice() {
-        quoteService.getBatchLastPricesAsync(perSymbolPositions.keySet(), lastPrice ->
-                currentUi.access(() -> lastPrice.forEach(this::updateLastPrice)));
+        partitionPositionsMap().forEach(this::packedUpdateRequest);
+    }
+
+    private List<Map<String, Collection<PositionViewModel>>> partitionPositionsMap() {
+        List<Map<String, Collection<PositionViewModel>>> listOfMaps = new ArrayList<>();
+        int counter = 5;
+        Map<String, Collection<PositionViewModel>> map = new HashMap<>();
+        for (val entry : perSymbolPositions.entrySet()) {
+            map.put(entry.getKey(), entry.getValue());
+            if (--counter <= 0) {
+                map = new HashMap<>();
+                listOfMaps.add(map);
+            }
+        }
+        if (counter != 0) {
+            listOfMaps.add(map);
+        }
+        return listOfMaps;
+    }
+
+    private void packedUpdateRequest(Map<String, Collection<PositionViewModel>> pack) {
+        currentUi.access(() -> doMarketDataUpdate(pack));
+    }
+
+    private void doMarketDataUpdate(Map<String, Collection<PositionViewModel>> pack) {
+        quoteService.getBatchLastPrices(pack.keySet())
+                .forEach(this::updateLastPrice);
+        quoteService.getKeyStats(pack);
+        pack.values().stream()
+                .flatMap(Collection::stream)
+                .forEach(i -> grid.getDataProvider().refreshItem(i));
+
     }
 
     private void updateLastPrice(LastPrice lastPrice) {
         val models = perSymbolPositions.getOrDefault(lastPrice.getSymbol(), emptyList());
         models.forEach(model -> {
             model.setMarketPrice(lastPrice.getLastPrice());
+            //PriceChange priceChange = model.getPriceChange();
+            //if (priceChange.isPresent()) {
+            //    priceChange.setDay(PriceChange.Value.from(lastPrice.));
+            //}
             grid.getDataProvider().refreshItem(model);
         });
     }
@@ -241,9 +295,9 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
         grid.addColumn(PositionViewModel::getQuantity)
                 .setFlexGrow(5)
                 .setHeader("Размер");
-        grid.addColumn(getProfitRenderer())
+        grid.addColumn(getChangeRenderer())
                 .setFlexGrow(5)
-                .setHeader("Неделя");
+                .setHeader("Изменения");
         grid.addColumn(getProfitRenderer())
                 .setFlexGrow(5)
                 .setHeader("Цена");

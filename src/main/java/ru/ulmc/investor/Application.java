@@ -10,7 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * The entry point from the Spring Boot application.
+ * The entry point of the Spring Boot application.
  */
 @EnableAsync
 @EnableScheduling

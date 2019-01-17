@@ -8,18 +8,25 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import ru.ulmc.investor.service.dto.KeyStatsDto;
 
 @Getter
+@Setter
 @ToString
 @NoArgsConstructor
-@Builder
+@AllArgsConstructor
+@Builder(toBuilder = true)
 public class PriceChange {
     public static final PriceChange empty = PriceChange.builder().present(false).build();
-
+    private static final Value emptyValue = new Value();
+    @Builder.Default
     private boolean present = true;
-    private Value day;
-    private Value week;
-    private Value month;
+    @Builder.Default
+    private Value day = emptyValue;
+    @Builder.Default
+    private Value week = emptyValue;
+    @Builder.Default
+    private Value month = emptyValue;
 
     @Getter
     @ToString
@@ -30,8 +37,9 @@ public class PriceChange {
         private Double change;
         private boolean growth;
 
-        public static Value from(BigDecimal changeVal, Double change) {
-            return new Value(changeVal, change, change > 0);
+        public static Value from(KeyStatsDto.Value stat) {
+            double percents = stat.getPercents().doubleValue();
+            return new Value(stat.getValueChange(), percents, percents > 0);
         }
     }
 }

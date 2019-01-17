@@ -1,5 +1,6 @@
 <link rel="import" href="../../bower_components/vaadin-lumo-styles/color.html">
 <link rel="import" href="../../bower_components/vaadin-lumo-styles/typography.html">
+<link rel="import" href="../../bower_components/vaadin-progress-bar/src/vaadin-progress-bar.html">
 
 <dom-module id="price-change">
     <template>
@@ -21,10 +22,15 @@
                 height: 12px;
             }
         </style>
-        <div>
-            <span class$='price-change__growth-[[price.dayGrowth]]'>[[price.dayChange]]</span> |
-            <span class$='price-change__growth-[[price.weekGrowth]]'>[[price.weekChange]]</span> |
-            <span class$='price-change__growth-[[price.monthGrowth]]'>[[price.monthChange]]</span>
+        <div><!--
+            <template is='dom-if' if='[[price.present]]'>-->
+                <span class$='price-change__growth-[[price.dayGrowth]]'>[[price.dayChange]]</span> |
+                <span class$='price-change__growth-[[price.weekGrowth]]'>[[price.weekChange]]</span> |
+                <span class$='price-change__growth-[[price.monthGrowth]]'>[[price.monthChange]]</span>
+          <!--  </template>
+            <template is='dom-if' if='[[!price.present]]'>
+                <vaadin-progress-bar indeterminate value="0"></vaadin-progress-bar>
+            </template>-->
         </div>
     </template>
 

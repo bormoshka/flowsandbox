@@ -2,6 +2,7 @@ package ru.ulmc.investor.data.entity;
 
 import org.atmosphere.config.service.Get;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
@@ -55,9 +56,9 @@ public class HistoryPrice {
     @ToString
     @EqualsAndHashCode
     @NoArgsConstructor
+    @AllArgsConstructor
     @Builder
-    public static class HistoryPriceId {
-
+    public static class HistoryPriceId implements Serializable {
         @Column(name = "SYMBOL")
         private String symbol;
         @Column(name = "DATE")

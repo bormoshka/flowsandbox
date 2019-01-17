@@ -28,7 +28,7 @@ public class PositionTotal extends PositionPrice {
     @Override
     public BigDecimal getMarket() {
         if (isLastPriceInitialized()) {
-            return getMarket().multiply(getSize());
+            return super.getMarket().multiply(getSize());
         }
         return ZERO;
     }

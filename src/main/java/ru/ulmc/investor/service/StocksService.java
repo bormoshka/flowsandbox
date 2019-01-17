@@ -45,21 +45,18 @@ public class StocksService {
     private final BrokerRepository brokerRepository;
     private final StockRepository stockRepository;
     private final LastPriceRepository lastPriceRepository;
-    private final HistoryPriceRepository historyPriceRepository;
 
     @Autowired
     public StocksService(PortfolioRepository portfolioRepository,
                          PositionRepository positionRepository,
                          BrokerRepository brokerRepository,
                          StockRepository stockRepository,
-                         LastPriceRepository lastPriceRepository,
-                         HistoryPriceRepository historyPriceRepository) {
+                         LastPriceRepository lastPriceRepository) {
         this.portfolioRepository = portfolioRepository;
         this.positionRepository = positionRepository;
         this.brokerRepository = brokerRepository;
         this.stockRepository = stockRepository;
         this.lastPriceRepository = lastPriceRepository;
-        this.historyPriceRepository = historyPriceRepository;
     }
 
     public List<SymbolViewModel> getStockPositions() {
@@ -134,12 +131,12 @@ public class StocksService {
     }
 
     public Portfolio save(Portfolio model) {
-        log.debug("Trying to save portfolio from model {}", model);
+        log.debug("Trying to save portfolio of model {}", model);
         return portfolioRepository.save(model);
     }
 
     public void closeFractionally(Position open, Position closed) {
-        log.debug("Trying to close position from open {} to closed {}", open, closed);
+        log.debug("Trying to close position of open {} to closed {}", open, closed);
         Optional<Portfolio> portfolio = portfolioRepository.findById(open.getPortfolio().getId());
         Optional<Symbol> stock = stockRepository.findById(open.getSymbol().getId());
 
@@ -170,7 +167,7 @@ public class StocksService {
     }
 
     public Position save(Position model) {
-        log.debug("Trying to save position from model {}", model);
+        log.debug("Trying to save position of model {}", model);
         Optional<Portfolio> portfolio = portfolioRepository.findById(model.getPortfolio().getId());
         Optional<Symbol> stock = stockRepository.findById(model.getSymbol().getId());
         if (portfolio.isPresent() && stock.isPresent()) {
@@ -182,7 +179,7 @@ public class StocksService {
     }
 
     public Symbol save(Symbol model) {
-        log.debug("Trying to save position from model {}", model);
+        log.debug("Trying to save position of model {}", model);
         Optional<Broker> byId = brokerRepository.findById(model.getBroker().getId());
         if (byId.isPresent()) {
             model.setBroker(byId.get());
@@ -192,15 +189,8 @@ public class StocksService {
     }
 
     public Broker save(Broker model) {
-        log.debug("Trying to save position from model {}", model);
+        log.debug("Trying to save position of model {}", model);
         return brokerRepository.save(model);
-    }
-
-    private Optional<HistoryPrice> findHistoryPrices(LocalDate date, String symbol) {
-        return historyPriceRepository.findById(HistoryPriceId.builder()
-                .date(date)
-                .symbol(symbol)
-                .build());
     }
 
     private Optional<LastPrice> findLastPrice(String stockCode) {
