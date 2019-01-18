@@ -1,19 +1,36 @@
 package ru.ulmc.investor.service;
 
-import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.ulmc.investor.data.entity.*;
-import ru.ulmc.investor.data.repository.*;
-import ru.ulmc.investor.ui.entity.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Spliterator;
 import java.util.function.Function;
+
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import ru.ulmc.investor.data.entity.Broker;
+import ru.ulmc.investor.data.entity.HistoryPrice;
+import ru.ulmc.investor.data.entity.HistoryPrice.HistoryPriceId;
+import ru.ulmc.investor.data.entity.LastPrice;
+import ru.ulmc.investor.data.entity.Portfolio;
+import ru.ulmc.investor.data.entity.Position;
+import ru.ulmc.investor.data.entity.Symbol;
+import ru.ulmc.investor.data.repository.BrokerRepository;
+import ru.ulmc.investor.data.repository.HistoryPriceRepository;
+import ru.ulmc.investor.data.repository.LastPriceRepository;
+import ru.ulmc.investor.data.repository.PortfolioRepository;
+import ru.ulmc.investor.data.repository.PositionRepository;
+import ru.ulmc.investor.data.repository.StockRepository;
+import ru.ulmc.investor.ui.entity.BrokerLightModel;
+import ru.ulmc.investor.ui.entity.PortfolioLightModel;
+import ru.ulmc.investor.ui.entity.PortfolioViewModel;
+import ru.ulmc.investor.ui.entity.SymbolViewModel;
+import ru.ulmc.investor.ui.entity.position.PositionViewModel;
 
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
@@ -84,15 +101,18 @@ public class StocksService {
     }
 
     public List<PositionViewModel> getAllOpenPositions(long portfolioId) {
-        return toPositionViewModelAlt(positionRepository.findAllByClosedFalseAndPortfolio_Id(portfolioId));
+        List<Position> dbModels = positionRepository.findAllByClosedFalseAndPortfolio_Id(portfolioId);
+        return toPositionViewModelAlt(dbModels);
     }
 
     public List<PositionViewModel> getClosedPositions(long portfolioId) {
-        return toPositionViewModelAlt(positionRepository.findAllByClosedTrueAndPortfolio_Id(portfolioId));
+        List<Position> dbModels = positionRepository.findAllByClosedTrueAndPortfolio_Id(portfolioId);
+        return toPositionViewModelAlt(dbModels);
     }
 
     public List<PositionViewModel> getAllPositions(long portfolioId) {
-        return toPositionViewModelAlt(positionRepository.findAllByPortfolio_Id(portfolioId));
+        List<Position> dbModels = positionRepository.findAllByPortfolio_Id(portfolioId);
+        return toPositionViewModelAlt(dbModels);
     }
 
     public void removePortfolio(long portfolioId) {
@@ -111,12 +131,12 @@ public class StocksService {
     }
 
     public Portfolio save(Portfolio model) {
-        log.debug("Trying to save portfolio from model {}", model);
+        log.debug("Trying to save portfolio of model {}", model);
         return portfolioRepository.save(model);
     }
 
     public void closeFractionally(Position open, Position closed) {
-        log.debug("Trying to close position from open {} to closed {}", open, closed);
+        log.debug("Trying to close position of open {} to closed {}", open, closed);
         Optional<Portfolio> portfolio = portfolioRepository.findById(open.getPortfolio().getId());
         Optional<Symbol> stock = stockRepository.findById(open.getSymbol().getId());
 
@@ -147,7 +167,7 @@ public class StocksService {
     }
 
     public Position save(Position model) {
-        log.debug("Trying to save position from model {}", model);
+        log.debug("Trying to save position of model {}", model);
         Optional<Portfolio> portfolio = portfolioRepository.findById(model.getPortfolio().getId());
         Optional<Symbol> stock = stockRepository.findById(model.getSymbol().getId());
         if (portfolio.isPresent() && stock.isPresent()) {
@@ -159,7 +179,7 @@ public class StocksService {
     }
 
     public Symbol save(Symbol model) {
-        log.debug("Trying to save position from model {}", model);
+        log.debug("Trying to save position of model {}", model);
         Optional<Broker> byId = brokerRepository.findById(model.getBroker().getId());
         if (byId.isPresent()) {
             model.setBroker(byId.get());
@@ -169,11 +189,11 @@ public class StocksService {
     }
 
     public Broker save(Broker model) {
-        log.debug("Trying to save position from model {}", model);
+        log.debug("Trying to save position of model {}", model);
         return brokerRepository.save(model);
     }
 
-    public Optional<LastPrice> findLastPrice(String stockCode) {
+    private Optional<LastPrice> findLastPrice(String stockCode) {
         return ofNullable(lastPriceRepository.findFirstBySymbolOrderByDateTimeDesc(stockCode));
     }
 

@@ -4,6 +4,7 @@ import lombok.*;
 import ru.ulmc.investor.data.entity.Currency;
 import ru.ulmc.investor.data.entity.Portfolio;
 import ru.ulmc.investor.data.entity.Position;
+import ru.ulmc.investor.ui.entity.position.PositionViewModel;
 
 import java.io.Serializable;
 import java.math.BigDecimal;

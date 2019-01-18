@@ -5,9 +5,9 @@ import com.vaadin.flow.component.dependency.HtmlImport;
 import com.vaadin.flow.component.polymertemplate.PolymerTemplate;
 import lombok.extern.slf4j.Slf4j;
 import ru.ulmc.investor.data.entity.Currency;
-import ru.ulmc.investor.ui.entity.PositionResultViewModel;
-import ru.ulmc.investor.ui.entity.PositionResultViewModel.PerCurrencyResult;
-import ru.ulmc.investor.ui.entity.PositionViewModel;
+import ru.ulmc.investor.ui.entity.position.PositionResultViewModel;
+import ru.ulmc.investor.ui.entity.position.PositionResultViewModel.PerCurrencyResult;
+import ru.ulmc.investor.ui.entity.position.PositionViewModel;
 
 import java.util.ArrayList;
 import java.util.List;

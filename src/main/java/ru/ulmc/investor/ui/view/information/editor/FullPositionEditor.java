@@ -12,7 +12,6 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.TemplateRenderer;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
-import com.vaadin.flow.spring.annotation.UIScope;
 
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -23,10 +22,9 @@ import ru.ulmc.investor.service.StocksService;
 import ru.ulmc.investor.ui.MainLayout;
 import ru.ulmc.investor.ui.entity.SymbolViewModel;
 import ru.ulmc.investor.ui.entity.PortfolioLightModel;
-import ru.ulmc.investor.ui.entity.PositionViewModel;
+import ru.ulmc.investor.ui.entity.position.PositionViewModel;
 
 import java.util.List;
-import java.util.Locale;
 
 import static ru.ulmc.investor.ui.util.Format.DECIMAL_PATTERN;
 import static ru.ulmc.investor.ui.util.Format.LOCALE;

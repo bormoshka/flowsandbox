@@ -8,7 +8,9 @@ import org.springframework.context.PayloadApplicationEvent;
 import org.springframework.stereotype.Component;
 import ru.ulmc.investor.event.dto.PriceUpdateEvent;
 
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 
 import static java.util.Collections.emptySet;
@@ -32,7 +34,7 @@ public class StaticUpdateBroadcaster implements ApplicationListener<PayloadAppli
 
     public Registration subscribe(Consumer<PriceUpdateEvent> eventConsumer) {
         val listener = BaseEventListener.from(eventConsumer);
-        listeners.computeIfAbsent(PriceUpdateEvent.class, s -> new HashSet<>()).add(listener);
+        listeners.computeIfAbsent(PriceUpdateEvent.class, s -> new CopyOnWriteArraySet<>()).add(listener);
         return Registration.register(listener, eventListener ->
                 listeners.getOrDefault(PriceUpdateEvent.class, emptySet()).remove(eventListener));
     }

@@ -3,6 +3,7 @@ package ru.ulmc.investor.ui.view.information;
 import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.UIDetachedException;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -17,6 +18,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.data.renderer.TemplateRenderer;
+import com.vaadin.flow.function.ValueProvider;
 import com.vaadin.flow.router.*;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -31,7 +33,7 @@ import ru.ulmc.investor.service.UserService;
 import ru.ulmc.investor.ui.MainLayout;
 import ru.ulmc.investor.ui.entity.CommonLightModel;
 import ru.ulmc.investor.ui.entity.PortfolioLightModel;
-import ru.ulmc.investor.ui.entity.PositionViewModel;
+import ru.ulmc.investor.ui.entity.position.PositionViewModel;
 import ru.ulmc.investor.ui.util.Notify;
 import ru.ulmc.investor.ui.util.PageParams;
 import ru.ulmc.investor.ui.util.PositionStatusFilter;
@@ -45,9 +47,9 @@ import ru.ulmc.investor.user.Permission;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
 import static ru.ulmc.investor.ui.util.RouterUtil.navigateTo;
 import static ru.ulmc.investor.ui.util.RouterUtil.unescapeParams;
 
@@ -56,6 +58,7 @@ import static ru.ulmc.investor.ui.util.RouterUtil.unescapeParams;
 @HtmlImport("frontend://src/position/position-name-cell.html")
 @HtmlImport("frontend://src/position/position-date.html")
 @HtmlImport("frontend://src/position/position-profit.html")
+@HtmlImport("frontend://src/position/price-change.html")
 @TopLevelPage(menuName = "Позиции", order = 3)
 @Route(value = "positions", layout = MainLayout.class)
 public class PositionsPage extends CommonPage implements HasUrlParameter<String> {
@@ -67,6 +70,7 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
     private final MarketService quoteService;
     private final StaticUpdateBroadcaster staticBroadcaster;
     private final Map<String, Collection<PositionViewModel>> perSymbolPositions = new ConcurrentHashMap<>();
+    private final Map<String, PositionViewModel> perSymbolParents = new ConcurrentHashMap<>();
     private final AtomicBoolean enableAutoUpdate = new AtomicBoolean();
     private final Registration registration;
     private StocksService stocksService;
@@ -145,10 +149,14 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
             registration.unregister();
             return;
         }
-        currentUi.access(() -> {
-            lastPrices.forEach(this::updateLastPrice);
-            Notify.fastToast("Price update event received"); //debug purpose
-        });
+        try {
+            currentUi.access(() -> {
+                lastPrices.forEach(this::updateLastPrice);
+                Notify.fastToast("Price update event received"); //debug purpose
+            });
+        } catch (UIDetachedException ex) {
+            registration.unregister();
+        }
     }
 
     private void onEditorStateChange(GeneratedVaadinDialog.OpenedChangeEvent<Dialog> event) {
@@ -158,16 +166,48 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
     }
 
     private void findAndUpdateLastPrice() {
-        quoteService.getBatchLastPricesAsync(perSymbolPositions.keySet(), lastPrice ->
-                currentUi.access(() -> lastPrice.forEach(this::updateLastPrice)));
+        partitionPositionsMap(perSymbolParents)
+                .forEach(this::packedUpdateRequest);
+    }
+
+    private <T> List<Map<String, T>> partitionPositionsMap(Map<String, T> sourceMap) {
+        List<Map<String, T>> listOfMaps = new ArrayList<>();
+        int counter = 5;
+        Map<String, T> map = new HashMap<>();
+        for (val entry : sourceMap.entrySet()) {
+            map.put(entry.getKey(), entry.getValue());
+            if (--counter <= 0) {
+                map = new HashMap<>();
+                listOfMaps.add(map);
+            }
+        }
+        if (counter != 0) {
+            listOfMaps.add(map);
+        }
+        return listOfMaps;
+    }
+
+    private void packedUpdateRequest(Map<String, PositionViewModel> pack) {
+        currentUi.access(() -> doMarketDataUpdate(pack));
+    }
+
+    private void doMarketDataUpdate(Map<String, PositionViewModel> pack) {
+        quoteService.getBatchLastPrices(pack.keySet())
+                .forEach(this::updateLastPrice);
+        quoteService.getKeyStats(pack);
+        pack.values().forEach(i -> grid.getDataProvider().refreshItem(i));
     }
 
     private void updateLastPrice(LastPrice lastPrice) {
         val models = perSymbolPositions.getOrDefault(lastPrice.getSymbol(), emptyList());
-        models.forEach(model -> {
-            model.setMarketPrice(lastPrice.getLastPrice());
-            grid.getDataProvider().refreshItem(model);
-        });
+        models.forEach(model -> updateModelLastPrice(lastPrice, model));
+        perSymbolParents.computeIfPresent(lastPrice.getSymbol(), (s, model) -> updateModelLastPrice(lastPrice, model));
+    }
+
+    private PositionViewModel updateModelLastPrice(LastPrice lastPrice, PositionViewModel model) {
+        model.setMarketPrice(lastPrice.getLastPrice());
+        grid.getDataProvider().refreshItem(model);
+        return model;
     }
 
     private void onFilterStateChange(AbstractField.ComponentValueChangeEvent changeEvent) {
@@ -202,7 +242,7 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
         List<PositionViewModel> positions = applyFilterByStatus(portfolioId);
         perSymbolPositions.clear();
         positions.forEach(this::addToPositionsMap);
-        grid.setItems(getRootItems(), this::getChildrenForTreeGrid);
+        grid.setItems(makeRootItems(), this::getChildrenForTreeGrid);
 
         sumResultComponent.update(positions);
         findAndUpdateLastPrice();
@@ -219,34 +259,55 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
         return perSymbolPositions.computeIfAbsent(pos.getStockCode(), s -> new HashSet<>()).add(pos);
     }
 
-    private List<PositionViewModel> getRootItems() {
-        return perSymbolPositions.values().stream()
+    private Collection<PositionViewModel> makeRootItems() {
+
+        Map<String, PositionViewModel> map = perSymbolPositions.values().stream()
                 .map(PositionViewModel::makeParentFrom)
-                .collect(toList());
+                .collect(Collectors.toMap(o -> o.getSymbol().getCode(), o -> o));
+        perSymbolParents.putAll(map);
+        return perSymbolParents.values();
     }
 
     private void initGrid() {
         grid = new TreeGrid<>();
         grid.addHierarchyColumn(vm -> "")
-                .setFlexGrow(0)
+                .setFlexGrow(1)
+                .setWidth("35px")
                 .setHeader("");
         grid.setSizeFull();
 
         val nameCol = grid.addColumn(getNameRenderer())
-                .setFlexGrow(10)
+                .setFlexGrow(7)
                 .setHeader("Название");
         grid.addColumn(getDateRenderer())
-                .setFlexGrow(5)
+                .setFlexGrow(2)
                 .setHeader("Дата");
         grid.addColumn(PositionViewModel::getQuantity)
-                .setFlexGrow(5)
+                .setFlexGrow(1)
+                .setWidth("55px")
                 .setHeader("Размер");
-        grid.addColumn(getPriceRenderer())
+        grid.addColumn(getChangeRenderer("c-d", pvm -> pvm.getPriceChange().getDay()))
+                .setFlexGrow(1)
+                .setWidth("65px")
+                .setHeader("День");
+        grid.addColumn(getChangeRenderer("c-w", pvm -> pvm.getPriceChange().getWeek()))
+                .setFlexGrow(1)
+                .setWidth("65px")
+                .setHeader("Неделя");
+        grid.addColumn(getChangeRenderer("c-m", pvm -> pvm.getPriceChange().getMonth()))
+                .setFlexGrow(1)
+                .setWidth("65px")
+                .setHeader("Месяц");
+        grid.addColumn(getChangeRenderer("c-hy", pvm -> pvm.getPriceChange().getSixMonth()))
+                .setFlexGrow(1)
+                .setWidth("65px")
+                .setHeader("Пол года");
+        grid.addColumn(getProfitRenderer())
                 .setFlexGrow(5)
-                .setHeader("Цена");
+                .setHeader("Покупка / Текущая");
         val sumCol = grid.addColumn(getSumRenderer())
                 .setFlexGrow(5)
-                .setHeader("Сумма");
+                .setHeader("Итого");
         grid.addComponentColumn(this::createRowControls)
                 .setFlexGrow(0)
                 .setWidth("150px")
@@ -300,9 +361,16 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
                 .withProperty("position", p -> p);
     }
 
-    private Renderer<PositionViewModel> getPriceRenderer() {
+    private Renderer<PositionViewModel> getProfitRenderer() {
         return TemplateRenderer.<PositionViewModel>of("<position-profit position='[[item.prices]]'></position-profit>")
                 .withProperty("prices", PositionViewModel::getPrices);
+    }
+
+    private Renderer<PositionViewModel> getChangeRenderer(String property,
+                                                          ValueProvider<PositionViewModel, ?> provider) {
+        return TemplateRenderer.<PositionViewModel>of("<price-change position='[[item.position]]' " +
+                " price='[[item." + property + "]]'></price-change>")
+                .withProperty(property, provider);
     }
 
     private Renderer<PositionViewModel> getSumRenderer() {
@@ -338,9 +406,7 @@ public class PositionsPage extends CommonPage implements HasUrlParameter<String>
     private void initAddButton() {
         addBtn = new Button("Добавить", new Icon(VaadinIcon.PLUS));
         addBtn.setEnabled(false);
-        addBtn.addClickListener(buttonClickEvent -> {
-            openPositionEditor.create(portfolioComboBox.getValue());
-        });
+        addBtn.addClickListener(event -> openPositionEditor.create(portfolioComboBox.getValue()));
     }
 
     private void initControlsLayout() {

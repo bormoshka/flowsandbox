@@ -4,6 +4,9 @@
 <dom-module id="position-date">
     <template>
         <style>
+            .position-date {
+                font-size: var(--lumo-font-size-xs);
+            }
             .position-date__closed {
                 color: var(--lumo-contrast-60pct);
             }
@@ -12,7 +15,7 @@
                 color: var(--lumo-primary-color);
             }
         </style>
-        <div>
+        <div class="position-date">
             <span class$='position-date__[[position.status]]'>[[position.openDateFormatted]]</span>
             <template is='dom-if' if='[[position.closed]]'>
                 <br>

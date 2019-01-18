@@ -14,9 +14,9 @@ import org.springframework.context.annotation.Scope;
 import ru.ulmc.investor.data.entity.Position;
 import ru.ulmc.investor.service.StocksService;
 import ru.ulmc.investor.ui.MainLayout;
-import ru.ulmc.investor.ui.entity.PositionViewModel;
+import ru.ulmc.investor.ui.entity.position.PositionViewModel;
 
-import static ru.ulmc.investor.ui.entity.PositionViewModel.toEntity;
+import static ru.ulmc.investor.ui.entity.position.PositionViewModel.toEntity;
 
 @SpringComponent
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)

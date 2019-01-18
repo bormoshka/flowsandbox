@@ -30,9 +30,7 @@ public class PortfolioGrid extends Grid<PortfolioViewModel> {
         addColumn(PortfolioViewModel::getName);
         addComponentColumn(portfolioViewModel -> {
             Button btn = new Button("Редактирвать");
-            btn.addClickListener(buttonClickEvent -> {
-                onEditCallback.accept(portfolioViewModel);
-            });
+            btn.addClickListener(buttonClickEvent -> onEditCallback.accept(portfolioViewModel));
             return btn;
         });
     }

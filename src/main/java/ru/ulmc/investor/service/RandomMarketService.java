@@ -8,8 +8,10 @@ import pl.zankowski.iextrading4j.api.stocks.Company;
 
 import java.math.BigDecimal;
 import java.security.SecureRandom;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -20,9 +22,13 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
+import ru.ulmc.investor.data.entity.HistoryPrice;
 import ru.ulmc.investor.data.entity.InnerQuote;
 import ru.ulmc.investor.data.entity.LastPrice;
 import ru.ulmc.investor.data.repository.LastPriceRepository;
+import ru.ulmc.investor.service.dto.KeyStatsDto;
+
+import static ru.ulmc.investor.service.dto.KeyStatsDto.toKeyStatsValue;
 
 @Slf4j
 @Service
@@ -42,10 +48,12 @@ public class RandomMarketService implements ExternalMarketService {
     @Override
     public void getLastPriceAsync(Collection<String> symbols,
                                   Consumer<Collection<LastPrice>> quoteConsumer) {
-        Set<LastPrice> prices = symbols.stream()
-                .map(symbol -> updatePrice(this.prices.computeIfAbsent(symbol, this::getSavedPrice)))
-                .collect(Collectors.toSet());
-        quoteConsumer.accept(prices);
+        quoteConsumer.accept(getLastPricesInner(symbols));
+    }
+
+    @Override
+    public Collection<LastPrice> getLastPrice(Collection<String> symbols) {
+        return getLastPricesInner(symbols);
     }
 
     @Override
@@ -64,8 +72,54 @@ public class RandomMarketService implements ExternalMarketService {
     }
 
     @Override
-    public void subscribeForLastTrade(Collection<String> symbols, Consumer<LastPrice> lastTradeConsumer) {
+    public void subscribeForLastTrade(Collection<String> symbols,
+                                      Consumer<LastPrice> lastTradeConsumer) {
         throw new UnsupportedOperationException("this operation is not implemented yet");
+    }
+
+    @Override
+    public void getLastMonthHistoryData(String symbol,
+                                        Consumer<Collection<HistoryPrice>> priceConsumer) {
+
+    }
+
+    @Override
+    public List<KeyStatsDto> getKeyStats(Collection<String> symbols) {
+        return symbols.stream().map(
+                symbol -> KeyStatsDto.builder()
+                        .symbol(symbol)
+                        .requestDate(LocalDate.now())
+                        .week(getStatValue(symbol))
+                        .month(getStatValue(symbol))
+                        .sixMonth(getStatValue(symbol))
+                        .year(getStatValue(symbol))
+                        .day(getStatValue(symbol))
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void getKeyStatsAsync(Collection<String> symbols,
+                                 Consumer<Collection<KeyStatsDto>> resultConsumer) {
+        resultConsumer.accept(getKeyStats(symbols));
+    }
+
+    private KeyStatsDto.Value getStatValue(String symbol) {
+        BigDecimal percentChange = BigDecimal.valueOf(random.nextDouble());
+        LastPrice lastPrice = prices.get(symbol);
+        BigDecimal price;
+        if (lastPrice != null) {
+            price = lastPrice.getLastPrice();
+        } else {
+            price = BigDecimal.TEN;
+        }
+        return toKeyStatsValue(percentChange, price);
+    }
+
+    private Set<LastPrice> getLastPricesInner(Collection<String> symbols) {
+        return symbols.stream()
+                .map(symbol -> updatePrice(this.prices.computeIfAbsent(symbol, this::getSavedPrice)))
+                .collect(Collectors.toSet());
     }
 
     private LastPrice updatePrice(LastPrice lp) {

@@ -11,7 +11,6 @@ public class CompanyComponent extends PolymerTemplate<CompanyViewModel> {
 
     public CompanyComponent() {
         setId("company-info");
-
     }
 
     public void update(CompanyViewModel model) {

@@ -1,0 +1,49 @@
+<link rel="import" href="../../bower_components/vaadin-lumo-styles/color.html">
+<link rel="import" href="../../bower_components/vaadin-lumo-styles/typography.html">
+<link rel="import" href="../../bower_components/vaadin-progress-bar/src/vaadin-progress-bar.html">
+
+<dom-module id="price-change">
+    <template>
+        <style>
+            .price-change.price-change__growth-true {
+                color: var(--lumo-success-color);
+            }
+
+            .price-change.price-change__growth-false {
+                color: var(--lumo-error-color);
+            }
+
+            .price-change {
+                font-size: var(--lumo-font-size-xs);
+            }
+
+            .price-change__icon {
+                width: 12px;
+                height: 12px;
+            }
+        </style>
+        <div class$="price-change price-change__growth-[[price.growth]]">
+            <template is='dom-if' if='[[position.parent]]' restamp>
+                <template is='dom-if' if='[[price.present]]' restamp>
+                    <span>[[price.change]]%</span>
+                    <br>
+                    <span>[[price.changeVal]] [[position.baseCurrency]]</span>
+                </template>
+                <template is='dom-if' if='[[!price.present]]' restamp>
+                    <vaadin-progress-bar indeterminate value="0"></vaadin-progress-bar>
+                </template>
+            </template>
+            <template is='dom-if' if='[[!position.parent]]' restamp>—</template>
+        </div>
+    </template>
+
+    <script>
+        class PriceChange extends Polymer.Element {
+            static get is() {
+                return 'price-change';
+            }
+        }
+
+        window.customElements.define(PriceChange.is, PriceChange);
+    </script>
+</dom-module>

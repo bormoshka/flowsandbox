@@ -1,4 +1,4 @@
-<link rel="import" href="../../bower_components/vaadin-lumo-styles/color.html">
+<link href="../../bower_components/vaadin-lumo-styles/color.html" rel="import">
 <link rel="import" href="../../bower_components/vaadin-lumo-styles/typography.html">
 
 <dom-module id="position-profit">
@@ -7,6 +7,7 @@
             .price-comparison__closed-true {
 
             }
+
             .price-comparison .price-comparison__profit-true {
                 color: var(--lumo-success-color);
             }
@@ -29,7 +30,7 @@
             }
         </style>
         <div class$='price-comparison price-comparison__closed-[[position.closed]]'>
-           <template is='dom-if' if='[[position.closed]]'>
+            <template is='dom-if' if='[[position.closed]]'>
                 <iron-icon class="price-comparison__icon" icon="vaadin:minus-circle"></iron-icon>
             </template>
             [[position.open]]

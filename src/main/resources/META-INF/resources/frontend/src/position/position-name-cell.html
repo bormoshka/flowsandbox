@@ -17,12 +17,16 @@
                 font-size: var(--lumo-font-size-xs);
             }
 
+            .position-name__parent-false {
+                padding-left: 10px;
+            }
+
             .position-name__open .position-name__subtext,
             .position-name__closed .position-name__subtext {
                 color: var(--lumo-contrast-30pct);
             }
         </style>
-        <div class$='position-name__[[position.status]]'>
+        <div class$='position-name__[[position.status]] position-name__parent-[[position.parent]]'>
             <span class='position-name__text'>  [[position.stockName]]
                 </span>
             <br>
