@@ -1,20 +1,11 @@
 package ru.ulmc.investor.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import pl.zankowski.iextrading4j.api.stocks.Company;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Consumer;
-
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import pl.zankowski.iextrading4j.api.stocks.Company;
 import ru.ulmc.investor.data.entity.CompanyInfo;
 import ru.ulmc.investor.data.entity.HistoryPrice;
 import ru.ulmc.investor.data.entity.LastPrice;
@@ -26,6 +17,15 @@ import ru.ulmc.investor.service.convert.IEXMarketConverter;
 import ru.ulmc.investor.service.dto.KeyStatsDto;
 import ru.ulmc.investor.ui.entity.position.PositionViewModel;
 import ru.ulmc.investor.ui.entity.position.PriceChange;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
+
+import static java.util.Collections.emptyList;
 
 @Slf4j
 @Service
@@ -90,32 +90,34 @@ public class MarketService {
     }
 
     public Collection<LastPrice> getBatchLastPrices(Collection<String> symbol) {
+        if (symbol.isEmpty()) {
+            return emptyList();
+        }
         Collection<LastPrice> lastPrices = extMarketService.getLastPrice(symbol);
         lastPrices.forEach(this::saveIfNotPresent);
         return lastPrices;
     }
 
-    public void getKeyStats(Map<String, Collection<PositionViewModel>> positions) {
+    public void getKeyStats(Map<String, PositionViewModel> positions) {
         extMarketService.getKeyStats(positions.keySet())
                 .forEach(stat -> mapKeyStatsToViewModel(stat, positions.get(stat.getSymbol())));
     }
 
-    private void mapKeyStatsToViewModel(KeyStatsDto stat, Collection<PositionViewModel> models) {
-        for (PositionViewModel model : models) {
-            Optional<BigDecimal> optMarketPrice = model.getMarketPrice();
-            if (!optMarketPrice.isPresent()) {
-                continue;
-            }
-            val day = PriceChange.Value.from(stat.getDay());
-            val week = PriceChange.Value.from(stat.getWeek());
-            val month = PriceChange.Value.from(stat.getMonth());
-            model.setPriceChange(model.getPriceChange().toBuilder()
-                    .present(true)
-                    .day(day)
-                    .week(week)
-                    .month(month)
-                    .build());
+    private void mapKeyStatsToViewModel(KeyStatsDto stat, PositionViewModel model) {
+        Optional<BigDecimal> optMarketPrice = model.getMarketPrice();
+        if (!optMarketPrice.isPresent()) {
+            return;
         }
+        val day = PriceChange.Value.from(stat.getDay());
+        val week = PriceChange.Value.from(stat.getWeek());
+        val month = PriceChange.Value.from(stat.getMonth());
+        val month6 = PriceChange.Value.from(stat.getSixMonth());
+        model.setPriceChange(model.getPriceChange().toBuilder()
+                .day(day)
+                .week(week)
+                .month(month)
+                .sixMonth(month6)
+                .build());
     }
 
     private Optional<HistoryPrice> findHistoryPrices(LocalDate date, String symbol) {

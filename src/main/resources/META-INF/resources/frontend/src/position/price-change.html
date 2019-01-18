@@ -5,15 +5,15 @@
 <dom-module id="price-change">
     <template>
         <style>
-            .price-change .price-change__growth-true {
+            .price-change.price-change__growth-true {
                 color: var(--lumo-success-color);
             }
 
-            .price-change .price-change__growth-false {
+            .price-change.price-change__growth-false {
                 color: var(--lumo-error-color);
             }
 
-            .price-change .price-change__subtext {
+            .price-change {
                 font-size: var(--lumo-font-size-xs);
             }
 
@@ -22,15 +22,18 @@
                 height: 12px;
             }
         </style>
-        <div><!--
-            <template is='dom-if' if='[[price.present]]'>-->
-                <span class$='price-change__growth-[[price.dayGrowth]]'>[[price.dayChange]]</span> |
-                <span class$='price-change__growth-[[price.weekGrowth]]'>[[price.weekChange]]</span> |
-                <span class$='price-change__growth-[[price.monthGrowth]]'>[[price.monthChange]]</span>
-          <!--  </template>
-            <template is='dom-if' if='[[!price.present]]'>
-                <vaadin-progress-bar indeterminate value="0"></vaadin-progress-bar>
-            </template>-->
+        <div class$="price-change price-change__growth-[[price.growth]]">
+            <template is='dom-if' if='[[position.parent]]' restamp>
+                <template is='dom-if' if='[[price.present]]' restamp>
+                    <span>[[price.change]]%</span>
+                    <br>
+                    <span>[[price.changeVal]] [[position.baseCurrency]]</span>
+                </template>
+                <template is='dom-if' if='[[!price.present]]' restamp>
+                    <vaadin-progress-bar indeterminate value="0"></vaadin-progress-bar>
+                </template>
+            </template>
+            <template is='dom-if' if='[[!position.parent]]' restamp>—</template>
         </div>
     </template>
 

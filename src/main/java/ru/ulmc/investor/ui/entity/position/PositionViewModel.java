@@ -1,6 +1,11 @@
 package ru.ulmc.investor.ui.entity.position;
 
+import lombok.*;
 import org.apache.commons.lang3.tuple.Pair;
+import ru.ulmc.investor.data.entity.LastPrice;
+import ru.ulmc.investor.data.entity.Position;
+import ru.ulmc.investor.ui.entity.PortfolioLightModel;
+import ru.ulmc.investor.ui.entity.SymbolViewModel;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -9,17 +14,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.Optional;
-
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
-import lombok.ToString;
-import ru.ulmc.investor.data.entity.LastPrice;
-import ru.ulmc.investor.data.entity.Position;
-import ru.ulmc.investor.ui.entity.PortfolioLightModel;
-import ru.ulmc.investor.ui.entity.SymbolViewModel;
 
 import static java.math.BigDecimal.ZERO;
 import static java.math.BigDecimal.valueOf;
@@ -30,7 +24,7 @@ import static java.math.BigDecimal.valueOf;
 @Builder(toBuilder = true)
 @EqualsAndHashCode(of = {"id", "symbol"})
 public class PositionViewModel {
-    private static final DateTimeFormatter df = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+    private static final DateTimeFormatter df = DateTimeFormatter.ofPattern("dd.MM.yy");
     private Long id;
     private String comment;
     private PortfolioLightModel portfolio;
@@ -161,7 +155,7 @@ public class PositionViewModel {
     }
 
     public String getBaseCurrency() {
-        return symbol.getCurrency().name();
+        return symbol.getCurrency().getSpecialChar();
     }
 
     public String getStockCode() {
