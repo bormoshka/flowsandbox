@@ -16,7 +16,7 @@ public class UiUtils {
             .setWeekdaysShort(asList("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"))
             .setCalendar("Календарь")
             .setCancel("Отмена")
-            .setClear("Очитсить");
+            .setClear("Очистить");
 
     public static DatePicker.DatePickerI18n getCalendarI18n() {
         return I_18_N;
